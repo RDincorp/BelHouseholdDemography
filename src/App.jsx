@@ -340,6 +340,7 @@ function DatasetViewer({ dataset }) {
     setForecastYears(0);
     if (periodDim?.items?.length) {
       setYearRangeIndex([0, periodDim.items.length - 1]);
+    }
   }, [dataset.id]);
 
   // Handler to automatically expand the view period to show the forecast
