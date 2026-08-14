@@ -685,7 +685,7 @@ function DatasetViewer({ dataset }) {
                 {chartType === 'line' ? (
                   <LineChart 
                     data={forecastedChartData} 
-                    margin={{ top: 15, right: 30, left: 15, bottom: 10 }}
+                    margin={{ top: 15, right: 45, left: 15, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis 
@@ -759,7 +759,7 @@ function DatasetViewer({ dataset }) {
                 ) : (
                   <BarChart 
                     data={forecastedChartData} 
-                    margin={{ top: 15, right: 30, left: 15, bottom: 10 }}
+                    margin={{ top: 15, right: 45, left: 15, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                     <XAxis 

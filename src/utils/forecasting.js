@@ -22,12 +22,18 @@ export function calculateLinearRegression(data) {
   }
 
   const slope = (n * sumXY - sumX * sumY) / (n * sumXX - sumX * sumX);
-  const intercept = (sumY - slope * sumX) / n;
+  
+  // To avoid a visual "jump" in the forecast, we anchor the trend line to the last actual data point.
+  // Standard intercept: (sumY - slope * sumX) / n
+  // Anchored intercept: lastY - slope * lastX
+  const lastX = data[data.length - 1].x;
+  const lastY = data[data.length - 1].y;
+  const anchoredIntercept = lastY - slope * lastX;
 
   return {
     slope,
-    intercept,
-    predict: (x) => slope * x + intercept
+    intercept: anchoredIntercept,
+    predict: (x) => slope * x + anchoredIntercept
   };
 }
 
