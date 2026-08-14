@@ -17,30 +17,6 @@ const db = {
   datasets: []
 };
 
-// Russian translation dictionary for dimension titles
-const DIMENSION_TITLE_TRANSLATIONS = {
-  'Territory of the Republic of Belarus': 'Территория',
-  'Territory of the Republic of Belarus (village councils)': 'Территория (сельсоветы)',
-  'Republic of Belarus': 'Территория',
-  'Type of settlement': 'Тип населенного пункта',
-  'Units of measurement': 'Единица измерения',
-  'Age composition': 'Возрастной состав',
-  'Gender': 'Пол',
-  'Floor': 'Пол',
-  'Type of area': 'Тип местности',
-  'Type of terrain': 'Тип местности',
-  'Residential areas': 'Зоны проживания',
-  'Types of families with children under 18 years of age': 'Типы семей с детьми до 18 лет',
-  'Main causes of death': 'Основные причины смерти',
-  'Types of death': 'Типы смертности',
-  'Countries of the world/groups of countries': 'Страны / группы стран',
-  'Level of education': 'Уровень образования',
-  'Migration flows': 'Миграционные потоки',
-  'Direction of migration': 'Направление миграции',
-  'Main disease classes': 'Классы болезней',
-  'Reason for leaving': 'Причина выбытия'
-};
-
 // 1. Process Gender API Datasets
 const genderFolders = [
   path.join(rootDir, 'Численность населения 9-19'),
@@ -95,89 +71,77 @@ if (fs.existsSync(rawDataPortalDir)) {
         const title = (dp.name || file.replace('.json', '')).trim();
         const code = dp.code || file.replace('.json', '');
 
-        // Convert DataPortal SDMX structure to App.jsx compatible structure
-        const obsDims = dp.data?.structure?.dimensions?.observation || [];
-        
-        // Build Codelist lookup map for Russian names
-        const codelists = dp.dsd?.data?.codelists || [];
-        const clMap = {};
-        codelists.forEach(cl => {
-          clMap[cl.id] = {};
-          (cl.codes || []).forEach(c => {
-            clMap[cl.id][c.id] = c.names?.ru || c.name;
-          });
-        });
+        const years = dp.years || ['2021', '2022', '2023', '2024', '2025'];
+        const headerDims = dp.headerDims || ['Категория'];
 
-        const dsdDims = dp.dsd?.data?.dataStructures?.[0]?.dataStructureComponents?.dimensionList?.dimensions || [];
-
-        // Build dimensions array
-        const convertedDims = obsDims.map(d => {
-          // Find codelist for this dimension
-          const dsdDim = dsdDims.find(dd => dd.id === d.id);
-          let clId = null;
-          if (dsdDim?.localRepresentation?.enumeration) {
-            const match = dsdDim.localRepresentation.enumeration.match(/CL_[a-zA-Z0-9_]+/);
-            if (match) clId = match[0];
-          }
-
-          const dimRuName = DIMENSION_TITLE_TRANSLATIONS[d.name] || d.name || d.id;
-
-          return {
-            code: d.id,
-            name: { lang_ru: dimRuName },
-            items: (d.values || []).map(v => {
-              let valRuName = v.name;
-              if (clId && clMap[clId] && clMap[clId][v.id]) {
-                valRuName = clMap[clId][v.id];
-              }
-              return {
-                id: v.id,
-                name: { lang_ru: valRuName || v.id }
-              };
-            })
-          };
-        });
-
-        // Default period dimension if missing
-        let hasPeriod = convertedDims.some(d => d.code === 'PERIOD' || d.code === 'TIME_PERIOD');
-        if (!hasPeriod) {
-          convertedDims.unshift({
+        // Period dimension
+        const convertedDims = [
+          {
             code: 'PERIOD',
             name: { lang_ru: 'Период' },
-            items: [
-              { id: '2024', name: { lang_ru: '2024' } },
-              { id: '2025', name: { lang_ru: '2025' } }
-            ]
-          });
-        }
-
-        // Build dataset observations
-        const convertedDataset = {};
-        const obsObj = dp.data?.dataSets?.[0]?.observations || {};
-        
-        Object.entries(obsObj).forEach(([key, valArr]) => {
-          if (!valArr || valArr.length === 0) return;
-          const val = valArr[0];
-          const indices = key.split(':');
-          
-          // Map indices to item IDs
-          const keyCodes = [];
-          
-          // If we added a dummy PERIOD dim first, prepend '2024'
-          if (!hasPeriod) {
-            keyCodes.push('2024');
+            items: years.map(y => ({ id: y, name: { lang_ru: y } }))
           }
+        ];
 
-          obsDims.forEach((dim, idx) => {
-            const index = parseInt(indices[idx], 10);
-            if (!isNaN(index) && dim.values && dim.values[index]) {
-              keyCodes.push(dim.values[index].id);
-            } else {
-              keyCodes.push('T');
+        // Label map for dim items to IDs
+        const dimItemMaps = [];
+
+        headerDims.forEach((dimName, dimIdx) => {
+          const uniqueItems = new Set();
+          (dp.rows || []).forEach(r => {
+            if (r.labels && r.labels[dimIdx]) {
+              uniqueItems.add(r.labels[dimIdx].trim());
             }
           });
 
-          convertedDataset[keyCodes.join(':')] = val;
+          const itemsArr = Array.from(uniqueItems);
+          const itemToIdMap = new Map();
+          itemsArr.forEach((label, i) => {
+            itemToIdMap.set(label, `v_${i}`);
+          });
+
+          dimItemMaps.push(itemToIdMap);
+
+          convertedDims.push({
+            code: `dim_${dimIdx}`,
+            name: { lang_ru: dimName },
+            items: itemsArr.map((label, i) => ({
+              id: `v_${i}`,
+              name: { lang_ru: label }
+            }))
+          });
+        });
+
+        // Build dataset observations
+        const convertedDataset = {};
+        
+        (dp.rows || []).forEach(r => {
+          if (!r.values || r.values.length < years.length) return;
+          
+          // Row dimension label IDs
+          const rowLabelIds = [];
+          headerDims.forEach((_, dimIdx) => {
+            const label = (r.labels && r.labels[dimIdx]) ? r.labels[dimIdx].trim() : '';
+            const idMap = dimItemMaps[dimIdx];
+            if (idMap && idMap.has(label)) {
+              rowLabelIds.push(idMap.get(label));
+            } else {
+              rowLabelIds.push('v_0');
+            }
+          });
+
+          // Year values are at the end of r.values
+          const yearValues = r.values.slice(-years.length);
+          
+          yearValues.forEach((numStr, yIdx) => {
+            const year = years[yIdx];
+            if (!numStr) return;
+            const cleanNum = parseFloat(String(numStr).replace(/\s/g, '').replace(',', '.'));
+            if (!isNaN(cleanNum)) {
+              const key = [year, ...rowLabelIds].join(':');
+              convertedDataset[key] = cleanNum;
+            }
+          });
         });
 
         const dpDataset = {
