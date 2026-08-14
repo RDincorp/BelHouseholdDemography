@@ -340,8 +340,30 @@ function DatasetViewer({ dataset }) {
     setForecastYears(0);
     if (periodDim?.items?.length) {
       setYearRangeIndex([0, periodDim.items.length - 1]);
-    }
   }, [dataset.id]);
+
+  // Handler to automatically expand the view period to show the forecast
+  const handleForecastChange = (newForecastYears) => {
+    setForecastYears(newForecastYears);
+    const actualDataEndIndex = (periodDim?.items?.length || 1) - 1;
+    
+    setYearRangeIndex(prev => {
+      const [startIdx, endIdx] = prev;
+      let newEndIdx = endIdx;
+      
+      if (newForecastYears > 0) {
+        // Extend to include the forecast at the right edge
+        newEndIdx = actualDataEndIndex + newForecastYears;
+      } else {
+        // Constrain back to actual data if forecast is disabled
+        newEndIdx = Math.min(endIdx, actualDataEndIndex);
+      }
+      
+      const newStartIdx = Math.min(startIdx, newEndIdx);
+      if (startIdx === newStartIdx && endIdx === newEndIdx) return prev;
+      return [newStartIdx, newEndIdx];
+    });
+  };
 
   // Handler for select dropdown change that IMMEDIATELY removes lingering focus outline
   const handleFilterSelect = (dimCode, value, event) => {
@@ -651,7 +673,7 @@ function DatasetViewer({ dataset }) {
                   type="checkbox" 
                   checked={forecastYears > 0}
                   onChange={(e) => {
-                    setForecastYears(e.target.checked ? 5 : 0);
+                    handleForecastChange(e.target.checked ? 5 : 0);
                   }}
                   className="rounded text-amber-500 focus:ring-amber-500 bg-white border-slate-300"
                 />
@@ -665,7 +687,7 @@ function DatasetViewer({ dataset }) {
                   type="range" 
                   min="1" max="10" step="1"
                   value={forecastYears}
-                  onChange={(e) => setForecastYears(Number(e.target.value))}
+                  onChange={(e) => handleForecastChange(Number(e.target.value))}
                   className="w-24 accent-amber-500"
                 />
                 <span className="text-xs font-bold text-amber-600 w-12">{forecastYears} {forecastYears === 1 ? 'год' : forecastYears < 5 ? 'года' : 'лет'}</span>
