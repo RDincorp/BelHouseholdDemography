@@ -97,50 +97,71 @@ function App() {
 function DatasetViewer({ dataset }) {
   const { originalData } = dataset;
   
-  // Parse dimensions
+  // Extract dimensions
   const dims = originalData.structure.dimensions;
-  
-  // Let's find the time dimension (usually PERIOD)
   const periodDim = dims.find(d => d.code === 'PERIOD');
-  const sexDim = dims.find(d => d.code === 'SEX');
+  const otherDims = dims.filter(d => d.code !== 'PERIOD');
   
-  // Transform dataset values into a chartable format
+  // Find "Total" ('T') or first element for default filters
+  const defaultFilters = {};
+  otherDims.forEach(d => {
+      const totalItem = d.items.find(i => i.id === 'T');
+      defaultFilters[d.code] = totalItem ? totalItem.id : d.items[0].id;
+  });
+
+  const [filters, setFilters] = useState(defaultFilters);
+  const [splitBy, setSplitBy] = useState('none');
+
+  // Reset filters when dataset changes
+  useEffect(() => {
+     setFilters(defaultFilters);
+     setSplitBy('none');
+  }, [dataset.id]);
+
+  const handleFilterChange = (dimCode, value) => {
+      setFilters(prev => ({ ...prev, [dimCode]: value }));
+  };
+
+  // Transform data
   const chartData = useMemo(() => {
     if (!periodDim) return [];
     
-    // Default chart: plot total population over time
     return periodDim.items.map(period => {
       const row = { year: period.name.lang_ru || period.id };
       
-      if (sexDim) {
-        // If sex dim exists, plot by sex
-        sexDim.items.forEach(sex => {
-           // Find key that matches this period and sex, with totals for other dims
-           const keyParts = dims.map(d => {
-             if (d.code === 'PERIOD') return period.id;
-             if (d.code === 'SEX') return sex.id;
-             return 'T'; // 'T' usually stands for Total in SDMX-like structures
-           });
-           const key = keyParts.join(':');
-           const val = originalData.dataset[key];
-           if (val) row[sex.name.lang_ru || sex.id] = parseFloat(val);
-        });
+      if (splitBy !== 'none') {
+        const splitDim = otherDims.find(d => d.code === splitBy);
+        if (splitDim) {
+            splitDim.items.forEach(splitItem => {
+               const keyParts = dims.map(d => {
+                 if (d.code === 'PERIOD') return period.id;
+                 if (d.code === splitBy) return splitItem.id;
+                 return filters[d.code];
+               });
+               const key = keyParts.join(':');
+               const val = originalData.dataset[key];
+               if (val !== undefined) {
+                   row[splitItem.name.lang_ru || splitItem.id] = parseFloat(val);
+               }
+            });
+        }
       } else {
-        // Just find total for this period
         const keyParts = dims.map(d => {
            if (d.code === 'PERIOD') return period.id;
-           return 'T';
+           return filters[d.code];
         });
         const key = keyParts.join(':');
         const val = originalData.dataset[key];
-        if (val) row['Всего'] = parseFloat(val);
+        if (val !== undefined) {
+            row['Значение'] = parseFloat(val);
+        }
       }
       return row;
     });
-  }, [dataset]);
+  }, [dataset, filters, splitBy]);
 
   const lines = chartData.length > 0 ? Object.keys(chartData[0]).filter(k => k !== 'year') : [];
-  const colors = ['#2563eb', '#db2777', '#16a34a', '#d97706', '#9333ea'];
+  const colors = ['#2563eb', '#db2777', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#0d9488', '#4f46e5', '#e11d48'];
 
   return (
     <div className="space-y-6">
@@ -149,16 +170,62 @@ function DatasetViewer({ dataset }) {
         <p className="text-gray-500 mb-6 text-sm">
           Данные из категории: <span className="font-medium text-gray-700">{dataset.category}</span>
         </p>
+
+        {/* Filters Panel */}
+        {otherDims.length > 0 && (
+          <div className="bg-gray-50 p-4 rounded-md border border-gray-200 mb-6 flex flex-wrap gap-4 items-end">
+            {otherDims.map(dim => (
+              <div key={dim.code} className="flex flex-col min-w-[200px] flex-1">
+                <label className="text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">
+                  {dim.name.lang_ru || dim.code}
+                </label>
+                <select 
+                  className="border border-gray-300 rounded px-3 py-1.5 text-sm bg-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100 disabled:text-gray-400"
+                  value={filters[dim.code]}
+                  onChange={e => handleFilterChange(dim.code, e.target.value)}
+                  disabled={splitBy === dim.code}
+                >
+                  {dim.items.map(item => (
+                    <option key={item.id} value={item.id}>
+                      {item.name.lang_ru || item.id}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            ))}
+            
+            <div className="flex flex-col min-w-[200px] flex-1 border-l pl-4 border-gray-300">
+              <label className="text-xs font-bold text-blue-700 uppercase tracking-wide mb-1">
+                Разбить график по:
+              </label>
+              <select 
+                className="border border-blue-300 rounded px-3 py-1.5 text-sm bg-blue-50 text-blue-800 font-medium focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={splitBy}
+                onChange={e => setSplitBy(e.target.value)}
+              >
+                <option value="none">Не разбивать (Одна линия)</option>
+                {otherDims.map(dim => (
+                  <option key={dim.code} value={dim.code}>
+                    {dim.name.lang_ru || dim.code}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        )}
         
-        {chartData.length > 0 ? (
-          <div className="h-96 w-full mt-4">
+        {chartData.length > 0 && lines.length > 0 ? (
+          <div className="h-[450px] w-full mt-4">
             <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <LineChart data={chartData} margin={{ top: 10, right: 30, left: 20, bottom: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                 <XAxis dataKey="year" tick={{fill: '#6b7280', fontSize: 12}} tickLine={false} axisLine={{stroke: '#e5e7eb'}} />
-                <YAxis tick={{fill: '#6b7280', fontSize: 12}} tickLine={false} axisLine={false} width={80} />
+                <YAxis tick={{fill: '#6b7280', fontSize: 12}} tickLine={false} axisLine={false} width={80} 
+                  tickFormatter={val => new Intl.NumberFormat('ru-RU', { notation: "compact", compactDisplay: "short" }).format(val)}
+                />
                 <Tooltip 
                   contentStyle={{borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'}}
+                  formatter={(value) => new Intl.NumberFormat('ru-RU').format(value)}
                 />
                 <Legend iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
                 {lines.map((key, i) => (
@@ -170,14 +237,15 @@ function DatasetViewer({ dataset }) {
                     strokeWidth={3}
                     dot={{r: 4, strokeWidth: 2}}
                     activeDot={{r: 6}}
+                    connectNulls={true}
                   />
                 ))}
               </LineChart>
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg text-gray-400">
-            Нет данных для отображения графика
+          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg text-gray-400 border border-dashed border-gray-300">
+            Нет данных для выбранных фильтров
           </div>
         )}
       </div>
@@ -188,31 +256,35 @@ function DatasetViewer({ dataset }) {
         </div>
         <div className="overflow-x-auto max-h-96">
           <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50 sticky top-0">
+            <thead className="bg-gray-50 sticky top-0 z-10 shadow-sm">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                   Год
                 </th>
                 {lines.map(line => (
-                  <th key={line} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th key={line} className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider bg-gray-50">
                     {line}
                   </th>
                 ))}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {chartData.map((row, i) => (
-                <tr key={i} className="hover:bg-gray-50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {row.year}
-                  </td>
-                  {lines.map(line => (
-                    <td key={line} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {row[line] !== undefined ? row[line].toLocaleString('ru-RU') : '-'}
+              {chartData.map((row, i) => {
+                const hasData = lines.some(line => row[line] !== undefined);
+                if (!hasData) return null; // Skip rows with entirely no data
+                return (
+                  <tr key={i} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      {row.year}
                     </td>
-                  ))}
-                </tr>
-              ))}
+                    {lines.map(line => (
+                      <td key={line} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {row[line] !== undefined ? new Intl.NumberFormat('ru-RU').format(row[line]) : '-'}
+                      </td>
+                    ))}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
