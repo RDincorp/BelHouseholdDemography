@@ -59,15 +59,7 @@ function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [appMode, setAppMode] = useState('standard'); // 'standard' | 'pro'
-  const [expandedTreeGroups, setExpandedTreeGroups] = useState({
-    pop_structure: true,
-    birth_death: true,
-    marriages_family: true,
-    households_care: true,
-    migration: true,
-    other_demo: true
-  });
-
+  const [expandedTreeGroups, setExpandedTreeGroups] = useState({});
   useEffect(() => {
     fetch('./data/db.json')
       .then(res => res.json())
