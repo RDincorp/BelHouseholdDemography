@@ -1,16 +1,75 @@
-# React + Vite
+# BelHouseholdDemography — Демографическая статистика Республики Беларусь 🇧🇾
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Веб-приложение для исследовательского анализа демографических процессов, структуры домохозяйств и населения Республики Беларусь. Инструмент разработан для демографов и исследователей социально-демографических процессов.
 
-Currently, two official plugins are available:
+🌐 **Живая демонстрация (GitHub Pages)**: [https://RDincorp.github.io/BelHouseholdDemography/](https://RDincorp.github.io/BelHouseholdDemography/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+---
 
-## React Compiler
+## 📌 Цели и задачи проекта
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+1. **Единый банк данных**: Объединение исторических данных (Gender API, 1999–2025 гг.) и оперативной статистики с нового портала Белстата (DataPortal SDMX API, 2019–2026 гг.).
+2. **Многомерная навигация**: Возможность фильтрации данных по **5-летним возрастным когортам** (`0-4`, `5-9`, ..., `85+`), полу, регионам (области и г. Минск), типам местности (город/село) и статусам семьи.
+3. **Графическое сравнение (Split By)**: Отображение нескольких категорий (например, всех возрастных групп или всех областей) на одном графике для компаративного анализа.
 
-## Expanding the Oxlint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## 🏗 Архитектура и Структура Проекта
+
+### Стек технологий:
+- **Core**: React 18, Vite 8, JavaScript (ES Modules)
+- **Визуализация**: Recharts
+- **Стилизация**: Custom CSS (Harmonious & Responsive UI)
+- **Деплой**: GitHub Pages (`gh-pages`)
+
+### Структура каталогов:
+```
+BelHouseholdDemography/
+├── public/
+│   └── data/
+│       ├── db.json               # Единый мастер-файл базы данных (311 датасетов)
+│       └── dataportal_raw/       # Сырые SDMX-JSON данные с портала Белстата (300 файлов)
+├── scripts/
+│   ├── download_dataportal.js    # Скрипт выгрузки актуальных данных с dataportal.belstat.gov.by
+│   └── build_db.js               # ETL-скрипт конвертации и склейки всех датасетов в db.json
+├── src/
+│   ├── App.jsx                   # Главное приложение с динамической фильтрацией и графиками
+│   ├── App.css                   # Стили и токены дизайна
+│   └── main.jsx                  # Точка входа React
+├── README.md                     # Данное резюме проекта
+└── package.json                  # Зависимости и npm-скрипты
+```
+
+---
+
+## 📊 Источники и Структура Данных
+
+### 1. Исторические данные (Gender API / Белстат)
+- Данные по численности населения, 5-летним возрастным группам, одиночным домохозяйствам, первым бракам, разводам, составу семей с детьми.
+- Расположены в локальных директориях проекта (`Численность населения 9-19`, `Демография 9-19`, `Домохозяйства`).
+
+### 2. Новые данные (DataPortal Belstat API)
+- **API Endpoint**: `https://dataportal.belstat.gov.by/osids-public-api/indicator/`
+- **Формат**: SDMX-JSON (DSD структура + наблюдения)
+- **Покрытие**: 300 показателей по рождаемости, смертности, миграции, численности и структуре населения (включая данные по 2026 год).
+
+---
+
+## ⚙️ Основные Скрипты и Команды
+
+| Команда | Описание |
+| :--- | :--- |
+| `npm run dev` | Запуск локального сервера разработки |
+| `npm run build` | Сборка продакшн-бандла в директорию `dist/` |
+| `node scripts/download_dataportal.js` | Скачивание сырых данных с `dataportal.belstat.gov.by` |
+| `node scripts/build_db.js` | Запуск ETL-процесса: сборка всех данных в `public/data/db.json` |
+| `npm run deploy` | Автоматическая сборка и деплой на GitHub Pages |
+
+---
+
+## 💡 Информация для AI-Ассистента (Context for AI Assistants)
+
+Если вы работаете с этим репозиторием в **Google AI Studio** или других средах:
+- **Основной логический компонент**: `src/App.jsx` (`DatasetViewer`). Он динамически определяет структуры измерений (`dimensions`) и строит фильтры.
+- **Мастер-база данных**: `public/data/db.json`. Все данные для фронтенда читаются из этого файла.
+- **Добавление новых источников**: Для интеграции новых показателей обновляйте скрипт `scripts/build_db.js` и перезапускайте его, затем выполняйте `npm run deploy`.
