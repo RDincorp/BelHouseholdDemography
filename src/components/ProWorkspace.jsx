@@ -6,16 +6,7 @@ import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts';
 import { exportToCSV } from '../utils/export';
-
-const PALETTE = [
-  '#3b82f6', // Bright Blue
-  '#ef4444', // Red
-  '#10b981', // Emerald
-  '#f59e0b', // Amber
-  '#8b5cf6', // Violet
-  '#06b6d4', // Cyan
-  '#f43f5e', // Rose
-];
+import { getConstantColor } from '../utils/colors';
 
 export default function ProWorkspace({ db, treeGroupedDatasets }) {
   const [layers, setLayers] = useState([]);
@@ -140,7 +131,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                 onRemove={() => removeLayer(layer.id)}
                 isCollapsed={collapsedLayers[layer.id]}
                 onToggleCollapse={() => toggleLayerCollapse(layer.id)}
-                color={PALETTE[idx % PALETTE.length]}
+                color={getConstantColor(layer.name)}
               />
             ))
           )}
@@ -205,7 +196,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                   <Legend formatter={renderLegend} iconType="circle" wrapperStyle={{paddingTop: '20px'}} />
                   
                   {layers.map((layer, idx) => {
-                    const color = PALETTE[idx % PALETTE.length];
+                    const color = getConstantColor(layer.name);
                     const dataKey = `Layer_${layer.id}`;
                     
                     return (

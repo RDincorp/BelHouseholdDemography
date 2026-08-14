@@ -10,23 +10,8 @@ import {
 } from 'recharts';
 import { exportToCSV } from './utils/export';
 import { generateForecastData } from './utils/forecasting';
+import { getConstantColor } from './utils/colors';
 import ProWorkspace from './components/ProWorkspace';
-
-// Color palette for high contrast line differentiation
-const PALETTE = [
-  '#2563eb', // Blue
-  '#dc2626', // Red
-  '#16a34a', // Green
-  '#d97706', // Amber
-  '#9333ea', // Purple
-  '#0891b2', // Cyan
-  '#e11d48', // Rose
-  '#4f46e5', // Indigo
-  '#059669', // Emerald
-  '#ea580c', // Orange
-  '#7c3aed', // Violet
-  '#0284c7'  // Sky
-];
 
 // Tree category mapping for clean logical grouping in sidebar
 const TREE_CATEGORIES = [
@@ -734,9 +719,9 @@ function DatasetViewer({ dataset }) {
 
                       if (isHidden) return null;
 
-                      const strokeColor = PALETTE[i % PALETTE.length];
-                      const opacity = hasHover ? (isHovered ? 1.0 : 0.18) : 1.0;
+                      const strokeColor = getConstantColor(key);
                       const strokeWidth = isHovered ? 4.5 : 2.8;
+                      const opacity = hasHover ? (isHovered ? 1.0 : 0.18) : 1.0;
 
                       return (
                         <Line 
@@ -808,7 +793,7 @@ function DatasetViewer({ dataset }) {
 
                       if (isHidden) return null;
 
-                      const fillColor = PALETTE[i % PALETTE.length];
+                      const fillColor = getConstantColor(key);
                       const opacity = hasHover ? (isHovered ? 1.0 : 0.2) : 0.85;
 
                       return (
@@ -849,16 +834,16 @@ function DatasetViewer({ dataset }) {
               <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
                 Легенда (клик — скрыть):
               </span>
-              {lines.map((lineKey, i) => {
-                const isHidden = hiddenSeries.has(lineKey);
-                const isHovered = hoveredSeries === lineKey;
-                const color = PALETTE[i % PALETTE.length];
+              {lines.map((key, i) => {
+                const isHidden = hiddenSeries.has(key);
+                const isHovered = hoveredSeries === key;
+                const color = getConstantColor(key);
 
                 return (
                   <button
-                    key={lineKey}
-                    onClick={() => toggleSeries(lineKey)}
-                    onMouseEnter={() => setHoveredSeries(lineKey)}
+                    key={key}
+                    onClick={() => toggleSeries(key)}
+                    onMouseEnter={() => setHoveredSeries(key)}
                     onMouseLeave={() => setHoveredSeries(null)}
                     className={classNames(
                       "flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all select-none cursor-pointer",
