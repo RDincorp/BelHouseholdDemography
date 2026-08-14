@@ -6,3 +6,48 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* 1. Eliminate focus outline / black borders on SVG / Recharts containers on click */
+.recharts-wrapper, 
+.recharts-wrapper *,
+.recharts-surface, 
+.recharts-responsive-container,
+.recharts-legend-item,
+.recharts-cartesian-grid,
+.recharts-layer {
+  outline: none !important;
+  box-shadow: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* 2. Remove lingering browser focus outline on select and controls */
+select, button, input {
+  -webkit-tap-highlight-color: transparent;
+}
+
+select:focus, button:focus, input:focus {
+  outline: none !important;
+}
+
+/* Custom scrollbar for sidebar */
+aside ::-webkit-scrollbar {
+  width: 6px;
+}
+
+aside ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+aside ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+aside ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Smooth line curve opacity transition */
+.recharts-line-path {
+  transition: stroke-width 0.2s ease, opacity 0.2s ease;
+}
