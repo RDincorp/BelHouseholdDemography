@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { 
   Menu, BarChart2, Users, Home as HomeIcon, Map, ChevronRight, ChevronDown, 
   Search, Eye, EyeOff, Sliders, Maximize2, RefreshCw, LineChart as LineChartIcon,
-  Layers, Filter, Calendar
+  Layers, Filter, Calendar, Settings2
 } from 'lucide-react';
 import classNames from 'classnames';
 import {
