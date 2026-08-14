@@ -8,6 +8,9 @@ import classNames from 'classnames';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, Brush
 } from 'recharts';
+import { exportToCSV } from './utils/export';
+import { generateForecastData } from './utils/forecasting';
+import ProWorkspace from './components/ProWorkspace';
 
 // Color palette for high contrast line differentiation
 const PALETTE = [
@@ -70,6 +73,7 @@ function App() {
   const [activeDatasetId, setActiveDatasetId] = useState(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [appMode, setAppMode] = useState('standard'); // 'standard' | 'pro'
   const [expandedTreeGroups, setExpandedTreeGroups] = useState({
     pop_structure: true,
     birth_death: true,
@@ -130,21 +134,23 @@ function App() {
 
   return (
     <div className="flex h-screen bg-slate-100 overflow-hidden font-sans antialiased text-slate-800">
-      {/* Sidebar */}
-      <aside className={classNames(
-        "bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm",
-        isSidebarOpen ? "w-80" : "w-0 overflow-hidden"
-      )}>
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-slate-200 bg-blue-600 text-white flex items-center justify-between shrink-0">
-          <div className="flex items-center space-x-2">
-            <Users className="text-blue-200" size={22} />
-            <h1 className="text-base font-bold tracking-tight truncate">Демография Беларуси</h1>
-          </div>
-          <span className="text-[10px] bg-blue-700 text-blue-100 px-2 py-0.5 rounded-full font-semibold">
-            {db.datasets.length} наборов
-          </span>
-        </div>
+      {appMode === 'standard' ? (
+        <>
+          {/* Sidebar */}
+          <aside className={classNames(
+            "bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm",
+            isSidebarOpen ? "w-80" : "w-0 overflow-hidden"
+          )}>
+            {/* Sidebar Header */}
+            <div className="p-4 border-b border-slate-200 bg-blue-600 text-white flex items-center justify-between shrink-0">
+              <div className="flex items-center space-x-2">
+                <Users className="text-blue-200" size={22} />
+                <h1 className="text-base font-bold tracking-tight truncate">Демография Беларуси</h1>
+              </div>
+              <span className="text-[10px] bg-blue-700 text-blue-100 px-2 py-0.5 rounded-full font-semibold">
+                {db.datasets.length} наборов
+              </span>
+            </div>
 
         {/* Sidebar Search Bar */}
         <div className="p-3 border-b border-slate-200 bg-slate-50 shrink-0">
@@ -247,9 +253,16 @@ function App() {
           </div>
 
           <div className="flex items-center space-x-2 text-xs text-slate-500">
-            <span className="hidden sm:inline bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md">
+            <span className="hidden sm:inline bg-slate-100 border border-slate-200 px-2.5 py-1 rounded-md mr-2">
               Источник: <strong className="text-slate-700">{activeDataset?.source || 'Статистика'}</strong>
             </span>
+            <button
+              onClick={() => setAppMode('pro')}
+              className="bg-slate-800 hover:bg-slate-900 text-amber-400 border border-slate-700 px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center shadow-lg uppercase tracking-wider"
+            >
+              <Settings2 size={14} className="mr-1.5" />
+              Pro Режим
+            </button>
           </div>
         </header>
         
@@ -258,6 +271,30 @@ function App() {
           {activeDataset && <DatasetViewer dataset={activeDataset} />}
         </div>
       </main>
+        </>
+      ) : (
+        <div className="flex-1 flex flex-col h-full bg-slate-50">
+          <header className="bg-slate-900 border-b border-slate-800 h-14 flex items-center justify-between px-4 shrink-0 shadow-lg z-20">
+            <div className="flex items-center space-x-3 text-white">
+              <button 
+                onClick={() => setAppMode('standard')}
+                className="p-1.5 rounded-md text-slate-300 hover:bg-slate-800 focus:outline-none transition-colors flex items-center font-medium text-sm"
+              >
+                <ChevronRight size={18} className="rotate-180 mr-1" />
+                Назад
+              </button>
+              <div className="h-6 w-px bg-slate-700 mx-2"></div>
+              <Settings2 className="text-amber-400" size={18} />
+              <h2 className="text-base font-bold text-amber-400 uppercase tracking-wider">
+                Pro-режим Аналитики
+              </h2>
+            </div>
+          </header>
+          <div className="flex-1 overflow-hidden">
+            <ProWorkspace db={db} />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -291,12 +328,16 @@ function DatasetViewer({ dataset }) {
   // Chart view mode: Line or Bar
   const [chartType, setChartType] = useState('line');
 
+  // Forecasting and Export states
+  const [forecastYears, setForecastYears] = useState(0);
+
   // Reset filter and view states when switching dataset
   useEffect(() => {
     setFilters(defaultFilters);
     setSplitBy('none');
     setHiddenSeries(new Set());
     setHoveredSeries(null);
+    setForecastYears(0);
     if (periodDim?.items?.length) {
       setYearRangeIndex([0, periodDim.items.length - 1]);
     }
@@ -359,7 +400,7 @@ function DatasetViewer({ dataset }) {
   }, [periodDim]);
 
   // Filter chart data according to year range slider
-  const visibleChartData = useMemo(() => {
+  const visibleChartDataRaw = useMemo(() => {
     const [startIdx, endIdx] = yearRangeIndices;
     return fullChartData.slice(startIdx, endIdx + 1);
   }, [fullChartData, yearRangeIndices]);
@@ -375,6 +416,15 @@ function DatasetViewer({ dataset }) {
     });
     return Array.from(keys);
   }, [fullChartData]);
+
+  // Apply forecasting if enabled
+  const visibleChartData = useMemo(() => {
+    if (forecastYears > 0) {
+      const activeLines = lines.filter(l => !hiddenSeries.has(l));
+      return generateForecastData(visibleChartDataRaw, activeLines, forecastYears);
+    }
+    return visibleChartDataRaw;
+  }, [visibleChartDataRaw, lines, hiddenSeries, forecastYears]);
 
   // Fix 6: Calculate Min/Max values across visible dataset to determine optimal Y-axis bounds
   const yDomainLimits = useMemo(() => {
@@ -583,6 +633,39 @@ function DatasetViewer({ dataset }) {
               )}
             </div>
           )}
+
+          {/* Forecast UI Controls */}
+          <div className="flex items-center space-x-3 border-l border-slate-300 pl-3 ml-1 bg-slate-50 px-3 py-1 rounded-md">
+            <div className="flex flex-col">
+              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">
+                Тренд (Регрессия)
+              </span>
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={forecastYears > 0}
+                  onChange={(e) => {
+                    setForecastYears(e.target.checked ? 5 : 0);
+                  }}
+                  className="rounded text-amber-500 focus:ring-amber-500 bg-white border-slate-300"
+                />
+                <span className="text-xs font-semibold text-slate-700">Прогноз</span>
+              </label>
+            </div>
+            
+            {forecastYears > 0 && (
+              <div className="flex items-center space-x-2 ml-2 border-l border-slate-200 pl-3">
+                <input 
+                  type="range" 
+                  min="1" max="10" step="1"
+                  value={forecastYears}
+                  onChange={(e) => setForecastYears(Number(e.target.value))}
+                  className="w-24 accent-amber-500"
+                />
+                <span className="text-xs font-bold text-amber-600 w-12">{forecastYears} {forecastYears === 1 ? 'год' : forecastYears < 5 ? 'года' : 'лет'}</span>
+              </div>
+            )}
+          </div>
         </div>
         
         {/* Interactive Chart Area (Fix 1: Focus outline removed) */}
@@ -634,7 +717,14 @@ function DatasetViewer({ dataset }) {
                           stroke={strokeColor} 
                           strokeWidth={strokeWidth}
                           strokeOpacity={opacity}
-                          dot={{ r: isHovered ? 6 : 3.5, fill: strokeColor, strokeWidth: 1, stroke: '#fff' }}
+                          strokeDasharray={row => row?.isForecast ? "5 5" : "0"}
+                          dot={(props) => {
+                            const { cx, cy, payload } = props;
+                            if (payload.isForecast) {
+                              return <circle cx={cx} cy={cy} r={3} fill="#fff" stroke={strokeColor} strokeWidth={2} strokeDasharray="0" />;
+                            }
+                            return <circle cx={cx} cy={cy} r={isHovered ? 6 : 3.5} fill={strokeColor} stroke="#fff" strokeWidth={1} />;
+                          }}
                           activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff' }}
                           connectNulls={true}
                           onMouseEnter={() => setHoveredSeries(key)}
@@ -781,9 +871,20 @@ function DatasetViewer({ dataset }) {
             <BarChart2 size={16} className="text-blue-600" />
             <span>Данные в табличном виде ({visibleChartData.length} периодов)</span>
           </h3>
-          <span className="text-xs text-slate-500">
-            Отображаются выбранные периоды и категории
-          </span>
+          <div className="flex items-center space-x-3">
+            <span className="text-xs text-slate-500 hidden sm:inline">
+              Отображаются выбранные периоды и категории
+            </span>
+            <button
+              onClick={() => {
+                const activeLines = lines.filter(l => !hiddenSeries.has(l));
+                exportToCSV(visibleChartData, ['year', ...activeLines], dataset.title.replace(/\s+/g, '_'));
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center shadow-2xs"
+            >
+              Экспорт CSV
+            </button>
+          </div>
         </div>
         
         <div className="overflow-x-auto max-h-96">
@@ -814,9 +915,10 @@ function DatasetViewer({ dataset }) {
                 if (!hasData) return null;
 
                 return (
-                  <tr key={idx} className="hover:bg-blue-50/40 transition-colors">
-                    <td className="px-5 py-3 whitespace-nowrap font-bold text-slate-900 bg-slate-50/50">
-                      {row.year}
+                  <tr key={idx} className={classNames("hover:bg-blue-50/40 transition-colors", row.isForecast && "bg-amber-50/50")}>
+                    <td className="px-5 py-3 whitespace-nowrap font-bold text-slate-900 bg-slate-50/50 flex items-center space-x-2">
+                      <span>{row.year}</span>
+                      {row.isForecast && <span className="text-[10px] bg-amber-200 text-amber-800 px-1.5 py-0.5 rounded uppercase font-bold">Прогноз</span>}
                     </td>
                     {lines.map(line => {
                       if (hiddenSeries.has(line)) return null;
