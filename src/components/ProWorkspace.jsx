@@ -17,7 +17,7 @@ const PALETTE = [
   '#f43f5e', // Rose
 ];
 
-export default function ProWorkspace({ db }) {
+export default function ProWorkspace({ db, treeGroupedDatasets }) {
   const [layers, setLayers] = useState([]);
   const [layerIdCounter, setLayerIdCounter] = useState(1);
   const [collapsedLayers, setCollapsedLayers] = useState({});
@@ -36,8 +36,6 @@ export default function ProWorkspace({ db }) {
       name: db.datasets.find(d => d.id === datasetId)?.title || `Слой ${layerIdCounter}`
     }]);
     setLayerIdCounter(prev => prev + 1);
-    setIsCatalogOpen(false);
-    setCatalogSearch('');
   };
 
   const removeLayer = (id) => {
@@ -274,29 +272,69 @@ export default function ProWorkspace({ db }) {
               </div>
             </div>
 
-            {/* List */}
-            <div className="flex-1 overflow-y-auto p-2 bg-slate-50">
-              {db.datasets
-                .filter(d => d.title.toLowerCase().includes(catalogSearch.toLowerCase()))
-                .map(ds => (
-                <button
-                  key={ds.id}
-                  onClick={() => addLayer(ds.id)}
-                  className="w-full text-left p-4 hover:bg-white rounded-xl mb-1 transition-all border border-transparent hover:border-slate-200 hover:shadow-xs group flex items-start justify-between"
-                >
-                  <div className="pr-4">
-                    <h4 className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-snug">{ds.title}</h4>
-                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">{ds.source}</p>
+            {/* List with Categories */}
+            <div className="flex-1 overflow-y-auto p-4 bg-slate-50 space-y-6">
+              {treeGroupedDatasets.map(group => {
+                const GroupIcon = group.icon;
+                // Filter items within the group by search
+                const filteredItems = group.items.filter(ds => 
+                  ds.title.toLowerCase().includes(catalogSearch.toLowerCase())
+                );
+                
+                if (filteredItems.length === 0) return null;
+
+                return (
+                  <div key={group.id} className="mb-4">
+                    <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center space-x-2">
+                      <GroupIcon size={16} className="text-blue-500" />
+                      <span>{group.title}</span>
+                    </h4>
+                    <div className="space-y-1.5">
+                      {filteredItems.map(ds => {
+                        const isAdded = layers.some(l => l.datasetId === ds.id);
+                        return (
+                          <button
+                            key={ds.id}
+                            onClick={() => addLayer(ds.id)}
+                            className="w-full text-left p-3 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-200 hover:shadow-xs group flex items-start justify-between bg-slate-50"
+                          >
+                            <div className="pr-4">
+                              <h5 className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-snug">{ds.title}</h5>
+                              <p className="text-[11px] text-slate-400 mt-1 uppercase tracking-wider">{ds.source}</p>
+                            </div>
+                            {isAdded ? (
+                              <div className="text-emerald-500 shrink-0 mt-1 flex flex-col items-center bg-emerald-50 px-2 py-1 rounded">
+                                <span className="text-[10px] font-bold mb-0.5">ЕЩЕ</span>
+                                <Plus size={16} />
+                              </div>
+                            ) : (
+                              <Plus className="text-slate-300 group-hover:text-blue-500 shrink-0 mt-1" size={20} />
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                  <Plus className="text-slate-300 group-hover:text-blue-500 shrink-0 mt-1" size={20} />
-                </button>
-              ))}
+                );
+              })}
               
-              {db.datasets.filter(d => d.title.toLowerCase().includes(catalogSearch.toLowerCase())).length === 0 && (
+              {treeGroupedDatasets.every(group => 
+                group.items.filter(ds => ds.title.toLowerCase().includes(catalogSearch.toLowerCase())).length === 0
+              ) && (
                 <div className="text-center py-12 text-slate-400">
                   Ничего не найдено по вашему запросу.
                 </div>
               )}
+            </div>
+
+            {/* Footer with Done Button */}
+            <div className="p-4 border-t border-slate-100 bg-white shrink-0 flex justify-end">
+               <button 
+                  onClick={() => setIsCatalogOpen(false)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-6 rounded-xl transition-colors shadow-md hover:shadow-lg"
+               >
+                 Готово
+               </button>
             </div>
           </div>
         </div>

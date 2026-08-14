@@ -291,7 +291,7 @@ function App() {
             </div>
           </header>
           <div className="flex-1 overflow-hidden">
-            <ProWorkspace db={db} />
+            <ProWorkspace db={db} treeGroupedDatasets={treeGroupedDatasets} />
           </div>
         </div>
       )}
