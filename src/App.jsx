@@ -906,7 +906,7 @@ function DatasetViewer({ dataset }) {
                   return (
                     <th key={line} className="px-5 py-3 text-left font-bold text-slate-600 uppercase tracking-wider bg-slate-50 border-b border-slate-200">
                       <div className="flex items-center space-x-1.5">
-                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: PALETTE[i % PALETTE.length] }} />
+                        <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getConstantColor(line) }} />
                         <span>{line}</span>
                       </div>
                     </th>
