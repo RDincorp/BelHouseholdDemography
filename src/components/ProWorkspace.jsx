@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { 
-  Plus, X, Settings2, BarChart2, Layers, Download
+  Plus, X, Settings2, BarChart2, Layers, Download, Search, ChevronDown, ChevronRight
 } from 'lucide-react';
 import {
   ComposedChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -20,18 +20,24 @@ const PALETTE = [
 export default function ProWorkspace({ db }) {
   const [layers, setLayers] = useState([]);
   const [layerIdCounter, setLayerIdCounter] = useState(1);
+  const [collapsedLayers, setCollapsedLayers] = useState({});
+  const [isCatalogOpen, setIsCatalogOpen] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
 
   // Add a new empty layer
-  const addLayer = () => {
+  // Add a new empty layer from catalog
+  const addLayer = (datasetId) => {
     setLayers([...layers, {
       id: layerIdCounter,
-      datasetId: db.datasets[0].id,
+      datasetId: datasetId,
       filters: {},
       yAxisId: 'left', // left or right
       type: 'line', // line or bar
-      name: `Слой ${layerIdCounter}`
+      name: db.datasets.find(d => d.id === datasetId)?.title || `Слой ${layerIdCounter}`
     }]);
     setLayerIdCounter(prev => prev + 1);
+    setIsCatalogOpen(false);
+    setCatalogSearch('');
   };
 
   const removeLayer = (id) => {
@@ -40,6 +46,10 @@ export default function ProWorkspace({ db }) {
 
   const updateLayer = (id, updates) => {
     setLayers(layers.map(l => l.id === id ? { ...l, ...updates } : l));
+  };
+
+  const toggleLayerCollapse = (id) => {
+    setCollapsedLayers(prev => ({ ...prev, [id]: !prev[id] }));
   };
 
   // Compile data from all layers into a single time series
@@ -108,7 +118,7 @@ export default function ProWorkspace({ db }) {
             <h2 className="font-bold tracking-wide uppercase text-sm">Слои данных</h2>
           </div>
           <button 
-            onClick={addLayer}
+            onClick={() => setIsCatalogOpen(true)}
             className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-md transition-colors border border-slate-700 hover:border-slate-600 shadow-xs"
             title="Добавить показатель"
           >
@@ -130,6 +140,8 @@ export default function ProWorkspace({ db }) {
                 db={db} 
                 onUpdate={(updates) => updateLayer(layer.id, updates)}
                 onRemove={() => removeLayer(layer.id)}
+                isCollapsed={collapsedLayers[layer.id]}
+                onToggleCollapse={() => toggleLayerCollapse(layer.id)}
                 color={PALETTE[idx % PALETTE.length]}
               />
             ))
@@ -224,50 +236,111 @@ export default function ProWorkspace({ db }) {
           </div>
         </div>
       </div>
+
+      {/* Catalog Modal */}
+      {isCatalogOpen && (
+        <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6">
+          <div className="bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-4xl max-h-full overflow-hidden border border-slate-200">
+            {/* Header */}
+            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+              <div className="flex items-center space-x-3">
+                <div className="bg-blue-100 p-2 rounded-lg">
+                  <Layers className="text-blue-600" size={24} />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-slate-900">Каталог данных</h3>
+                  <p className="text-sm text-slate-500">Выберите показатель для добавления на график</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsCatalogOpen(false)}
+                className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+            
+            {/* Search */}
+            <div className="p-4 border-b border-slate-100 bg-white shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input 
+                  type="text"
+                  placeholder="Поиск по показателям..."
+                  value={catalogSearch}
+                  onChange={(e) => setCatalogSearch(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all font-medium text-slate-700"
+                />
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="flex-1 overflow-y-auto p-2 bg-slate-50">
+              {db.datasets
+                .filter(d => d.title.toLowerCase().includes(catalogSearch.toLowerCase()))
+                .map(ds => (
+                <button
+                  key={ds.id}
+                  onClick={() => addLayer(ds.id)}
+                  className="w-full text-left p-4 hover:bg-white rounded-xl mb-1 transition-all border border-transparent hover:border-slate-200 hover:shadow-xs group flex items-start justify-between"
+                >
+                  <div className="pr-4">
+                    <h4 className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-snug">{ds.title}</h4>
+                    <p className="text-xs text-slate-400 mt-1 line-clamp-1">{ds.source}</p>
+                  </div>
+                  <Plus className="text-slate-300 group-hover:text-blue-500 shrink-0 mt-1" size={20} />
+                </button>
+              ))}
+              
+              {db.datasets.filter(d => d.title.toLowerCase().includes(catalogSearch.toLowerCase())).length === 0 && (
+                <div className="text-center py-12 text-slate-400">
+                  Ничего не найдено по вашему запросу.
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-function LayerConfigCard({ layer, db, onUpdate, onRemove, color }) {
+function LayerConfigCard({ layer, db, onUpdate, onRemove, isCollapsed, onToggleCollapse, color }) {
   const dataset = db.datasets.find(d => d.id === layer.datasetId);
   const dims = dataset ? dataset.originalData.structure.dimensions.filter(d => d.code !== 'PERIOD') : [];
 
   return (
-    <div className="border border-slate-700 rounded-xl overflow-hidden bg-slate-800 shadow-lg">
+    <div className={`border border-slate-700 rounded-xl overflow-hidden bg-slate-800 shadow-lg transition-all duration-200 ${isCollapsed ? 'opacity-80 hover:opacity-100' : ''}`}>
       <div 
-        className="p-2.5 text-xs font-bold text-white flex justify-between items-center relative"
+        className="p-2.5 text-xs font-bold text-white flex justify-between items-center relative cursor-pointer group select-none"
         style={{ backgroundColor: color }}
+        onClick={onToggleCollapse}
       >
         <div className="flex items-center space-x-2 truncate pr-2 w-full">
+          {isCollapsed ? <ChevronRight size={16} className="opacity-70" /> : <ChevronDown size={16} className="opacity-70" />}
           <input 
             type="text" 
             value={layer.name} 
             onChange={(e) => onUpdate({ name: e.target.value })}
-            className="bg-black/20 hover:bg-black/30 focus:bg-black/40 px-2 py-1 rounded outline-none border-none text-white placeholder:text-white/60 font-bold truncate w-full transition-colors"
+            onClick={(e) => e.stopPropagation()} // prevent collapsing when editing name
+            className="bg-black/10 hover:bg-black/20 focus:bg-black/40 px-2 py-1 rounded outline-none border-none text-white placeholder:text-white/60 font-bold truncate w-full transition-colors cursor-text"
           />
         </div>
-        <button onClick={onRemove} className="p-1.5 hover:bg-black/20 rounded-md z-10 shrink-0 transition-colors ml-2">
+        <button 
+          onClick={(e) => { e.stopPropagation(); onRemove(); }} 
+          className="p-1.5 hover:bg-black/20 rounded-md z-10 shrink-0 transition-colors ml-2 opacity-0 group-hover:opacity-100"
+          title="Удалить слой"
+        >
           <X size={16} />
         </button>
       </div>
       
-      <div className="p-4 space-y-4">
-        <div>
-          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Показатель</label>
-          <select 
-            className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none truncate transition-shadow"
-            value={layer.datasetId}
-            onChange={e => {
-              const newDatasetId = e.target.value;
-              // Reset filters when dataset changes to prevent invalid selections
-              onUpdate({ datasetId: newDatasetId, filters: {}, name: db.datasets.find(d => d.id === newDatasetId)?.title || layer.name });
-            }}
-          >
-            {db.datasets.map(ds => (
-              <option key={ds.id} value={ds.id}>{ds.title}</option>
-            ))}
-          </select>
-        </div>
+      {!isCollapsed && (
+        <div className="p-4 space-y-4">
+          <div className="text-xs font-bold text-slate-300 leading-snug mb-2 border-b border-slate-700/50 pb-2">
+            {db.datasets.find(d => d.id === layer.datasetId)?.title}
+          </div>
+
 
         {dims.map(dim => (
           <div key={dim.code}>
@@ -302,7 +375,8 @@ function LayerConfigCard({ layer, db, onUpdate, onRemove, color }) {
               </select>
            </div>
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
