@@ -417,14 +417,20 @@ function DatasetViewer({ dataset }) {
     return Array.from(keys);
   }, [fullChartData]);
 
-  // Apply forecasting if enabled
-  const visibleChartData = useMemo(() => {
+  // Apply forecasting if enabled to the full dataset (not just the sliced visible one)
+  const forecastedChartData = useMemo(() => {
     if (forecastYears > 0) {
       const activeLines = lines.filter(l => !hiddenSeries.has(l));
-      return generateForecastData(visibleChartDataRaw, activeLines, forecastYears);
+      return generateForecastData(fullChartData, activeLines, forecastYears);
     }
-    return visibleChartDataRaw;
-  }, [visibleChartDataRaw, lines, hiddenSeries, forecastYears]);
+    return fullChartData;
+  }, [fullChartData, lines, hiddenSeries, forecastYears]);
+
+  // Filter chart data according to year range slider ONLY for the raw table
+  const visibleChartData = useMemo(() => {
+    const [startIdx, endIdx] = yearRangeIndices;
+    return forecastedChartData.slice(startIdx, endIdx + 1);
+  }, [forecastedChartData, yearRangeIndices]);
 
   // Fix 6: Calculate Min/Max values across visible dataset to determine optimal Y-axis bounds
   const yDomainLimits = useMemo(() => {
@@ -678,7 +684,7 @@ function DatasetViewer({ dataset }) {
               <ResponsiveContainer width="100%" height="100%">
                 {chartType === 'line' ? (
                   <LineChart 
-                    data={visibleChartData} 
+                    data={forecastedChartData} 
                     margin={{ top: 15, right: 30, left: 15, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -743,7 +749,7 @@ function DatasetViewer({ dataset }) {
                         startIndex={yearRangeIndices[0]}
                         endIndex={yearRangeIndices[1]}
                         onChange={(e) => {
-                          if (e && e.startIndex !== undefined && e.endIndex !== undefined) {
+                          if (e && typeof e.startIndex === 'number' && typeof e.endIndex === 'number') {
                             setYearRangeIndex([e.startIndex, e.endIndex]);
                           }
                         }}
@@ -752,7 +758,7 @@ function DatasetViewer({ dataset }) {
                   </LineChart>
                 ) : (
                   <BarChart 
-                    data={visibleChartData} 
+                    data={forecastedChartData} 
                     margin={{ top: 15, right: 30, left: 15, bottom: 10 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -804,7 +810,7 @@ function DatasetViewer({ dataset }) {
                         startIndex={yearRangeIndices[0]}
                         endIndex={yearRangeIndices[1]}
                         onChange={(e) => {
-                          if (e && e.startIndex !== undefined && e.endIndex !== undefined) {
+                          if (e && typeof e.startIndex === 'number' && typeof e.endIndex === 'number') {
                             setYearRangeIndex([e.startIndex, e.endIndex]);
                           }
                         }}
