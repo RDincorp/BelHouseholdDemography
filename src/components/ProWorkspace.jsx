@@ -7,7 +7,15 @@ import {
 } from 'recharts';
 import { exportToCSV } from '../utils/export';
 
-const PALETTE = ['#2563eb', '#dc2626', '#16a34a', '#d97706', '#9333ea', '#0891b2', '#e11d48'];
+const PALETTE = [
+  '#3b82f6', // Bright Blue
+  '#ef4444', // Red
+  '#10b981', // Emerald
+  '#f59e0b', // Amber
+  '#8b5cf6', // Violet
+  '#06b6d4', // Cyan
+  '#f43f5e', // Rose
+];
 
 export default function ProWorkspace({ db }) {
   const [layers, setLayers] = useState([]);
@@ -91,27 +99,27 @@ export default function ProWorkspace({ db }) {
   };
 
   return (
-    <div className="flex h-full overflow-hidden bg-slate-50 relative">
+    <div className="flex h-full overflow-hidden bg-slate-100 relative">
       {/* Layers Panel (Left) */}
-      <div className="w-80 bg-white border-r border-slate-200 shadow-sm flex flex-col z-10 shrink-0 h-full overflow-y-auto">
-        <div className="p-4 border-b border-slate-200 bg-slate-800 text-white flex justify-between items-center sticky top-0 z-20">
+      <div className="w-80 bg-slate-900 border-r border-slate-800 shadow-xl flex flex-col z-10 shrink-0 h-full overflow-y-auto">
+        <div className="p-4 border-b border-slate-800 bg-slate-900/95 text-white flex justify-between items-center sticky top-0 z-20 backdrop-blur-sm">
           <div className="flex items-center space-x-2">
-            <Settings2 size={20} className="text-blue-400" />
-            <h2 className="font-bold">Слои данных</h2>
+            <Layers size={20} className="text-amber-400" />
+            <h2 className="font-bold tracking-wide uppercase text-sm">Слои данных</h2>
           </div>
           <button 
             onClick={addLayer}
-            className="p-1 hover:bg-slate-700 rounded-md transition-colors"
+            className="p-1.5 hover:bg-slate-800 text-slate-300 hover:text-white rounded-md transition-colors border border-slate-700 hover:border-slate-600 shadow-xs"
             title="Добавить показатель"
           >
-            <Plus size={20} />
+            <Plus size={16} />
           </button>
         </div>
 
-        <div className="p-3 space-y-3">
+        <div className="p-4 space-y-4">
           {layers.length === 0 ? (
-            <div className="text-center p-6 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-lg">
-              <Layers size={32} className="mx-auto mb-2 text-slate-300" />
+            <div className="text-center p-8 text-slate-500 text-sm border-2 border-dashed border-slate-700 rounded-xl bg-slate-800/50">
+              <Layers size={32} className="mx-auto mb-3 text-slate-600" />
               Добавьте первый слой для построения графика
             </div>
           ) : (
@@ -130,12 +138,12 @@ export default function ProWorkspace({ db }) {
       </div>
 
       {/* Main Chart Area (Right) */}
-      <div className="flex-1 p-6 overflow-y-auto">
-        <div className="bg-white rounded-xl shadow-xs border border-slate-200 p-6 flex flex-col h-full min-h-[500px]">
-          <div className="flex justify-between items-center mb-6">
+      <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full min-h-[500px]">
+          <div className="flex justify-between items-start mb-8">
             <div>
-              <h2 className="text-xl font-bold text-slate-900">Профессиональный анализ</h2>
-              <p className="text-slate-500 text-sm">Сравнение показателей из разных разделов (Наложение слоев)</p>
+              <h2 className="text-xl font-bold text-slate-900 tracking-tight">Мульти-анализ показателей</h2>
+              <p className="text-slate-500 text-sm mt-1">Сравнение различных наборов данных на единой временной шкале</p>
             </div>
             {chartData.length > 0 && (
               <button 
@@ -143,10 +151,10 @@ export default function ProWorkspace({ db }) {
                   const exportKeys = layers.map(l => `Layer_${l.id}`);
                   exportToCSV(chartData, ['year', ...exportKeys], 'pro_analysis');
                 }}
-                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded text-xs font-bold transition-colors flex items-center shadow-2xs border border-slate-200"
+                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center shadow-sm"
               >
-                <Download size={14} className="mr-1.5" />
-                Экспорт
+                <Download size={16} className="mr-2" />
+                Экспорт CSV
               </button>
             )}
           </div>
@@ -207,12 +215,10 @@ export default function ProWorkspace({ db }) {
                 </ComposedChart>
               </ResponsiveContainer>
             ) : (
-               <div className="h-full flex items-center justify-center bg-slate-50 rounded-xl text-slate-400 border border-dashed border-slate-300">
-                  <div className="text-center">
-                    <BarChart2 size={48} className="mx-auto text-slate-200 mb-3" />
-                    <p>Нет данных для отображения</p>
-                    <p className="text-xs mt-1 text-slate-400">Добавьте слои на панели слева</p>
-                  </div>
+               <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl text-slate-400 border-2 border-dashed border-slate-200">
+                  <BarChart2 size={64} className="text-slate-200 mb-4" />
+                  <p className="text-lg font-medium text-slate-500">Нет слоев для отображения графика</p>
+                  <p className="text-sm mt-2 text-slate-400 max-w-sm text-center">Добавьте нужные показатели на панели слева, чтобы начать перекрестный анализ данных</p>
                </div>
             )}
           </div>
@@ -227,29 +233,29 @@ function LayerConfigCard({ layer, db, onUpdate, onRemove, color }) {
   const dims = dataset ? dataset.originalData.structure.dimensions.filter(d => d.code !== 'PERIOD') : [];
 
   return (
-    <div className="border border-slate-200 rounded-lg overflow-hidden bg-white shadow-xs">
+    <div className="border border-slate-700 rounded-xl overflow-hidden bg-slate-800 shadow-lg">
       <div 
-        className="p-2 text-xs font-bold text-white flex justify-between items-center relative"
+        className="p-2.5 text-xs font-bold text-white flex justify-between items-center relative"
         style={{ backgroundColor: color }}
       >
-        <div className="flex items-center space-x-2 truncate pr-2">
+        <div className="flex items-center space-x-2 truncate pr-2 w-full">
           <input 
             type="text" 
             value={layer.name} 
             onChange={(e) => onUpdate({ name: e.target.value })}
-            className="bg-black/20 hover:bg-black/30 px-2 py-0.5 rounded outline-none border-none text-white placeholder:text-white/60 font-semibold truncate max-w-[150px]"
+            className="bg-black/20 hover:bg-black/30 focus:bg-black/40 px-2 py-1 rounded outline-none border-none text-white placeholder:text-white/60 font-bold truncate w-full transition-colors"
           />
         </div>
-        <button onClick={onRemove} className="p-1 hover:bg-black/20 rounded z-10 shrink-0">
-          <X size={14} />
+        <button onClick={onRemove} className="p-1.5 hover:bg-black/20 rounded-md z-10 shrink-0 transition-colors ml-2">
+          <X size={16} />
         </button>
       </div>
       
-      <div className="p-3 bg-slate-50 space-y-3">
+      <div className="p-4 space-y-4">
         <div>
-          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Показатель</label>
+          <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Показатель</label>
           <select 
-            className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none truncate"
+            className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none truncate transition-shadow"
             value={layer.datasetId}
             onChange={e => {
               const newDatasetId = e.target.value;
@@ -265,11 +271,11 @@ function LayerConfigCard({ layer, db, onUpdate, onRemove, color }) {
 
         {dims.map(dim => (
           <div key={dim.code}>
-            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 truncate" title={dim.name?.lang_ru || dim.code}>
+            <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 truncate" title={dim.name?.lang_ru || dim.code}>
               {dim.name?.lang_ru || dim.code}
             </label>
             <select
-              className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none truncate"
+              className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none truncate transition-shadow"
               value={layer.filters[dim.code] || ''}
               onChange={e => {
                 onUpdate({ filters: { ...layer.filters, [dim.code]: e.target.value } });
@@ -283,11 +289,11 @@ function LayerConfigCard({ layer, db, onUpdate, onRemove, color }) {
           </div>
         ))}
 
-        <div className="border-t border-slate-200 pt-2 flex space-x-2">
+        <div className="border-t border-slate-700/50 pt-3 mt-4 flex space-x-2">
            <div className="flex-1">
-              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Ось Y</label>
+              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Привязка оси Y</label>
               <select 
-                className="w-full border border-slate-300 rounded px-2 py-1.5 text-xs focus:ring-1 focus:ring-blue-500 outline-none"
+                className="w-full bg-slate-900 border border-slate-700 text-slate-200 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-amber-500 focus:border-amber-500 outline-none transition-shadow"
                 value={layer.yAxisId}
                 onChange={e => onUpdate({ yAxisId: e.target.value })}
               >
