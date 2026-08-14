@@ -14,6 +14,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
   const [collapsedLayers, setCollapsedLayers] = useState({});
   const [isCatalogOpen, setIsCatalogOpen] = useState(false);
   const [catalogSearch, setCatalogSearch] = useState('');
+  const [collapsedCatalogGroups, setCollapsedCatalogGroups] = useState({});
 
   // Add a new empty layer
   // Add a new empty layer from catalog
@@ -273,38 +274,58 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                 );
                 
                 if (filteredItems.length === 0) return null;
+                const isGroupCollapsed = collapsedCatalogGroups[group.id] ?? true; // Collapsed by default
 
                 return (
-                  <div key={group.id} className="mb-4">
-                    <h4 className="text-sm font-bold text-slate-500 uppercase tracking-wider mb-3 flex items-center space-x-2">
-                      <GroupIcon size={16} className="text-blue-500" />
-                      <span>{group.title}</span>
-                    </h4>
-                    <div className="space-y-1.5">
-                      {filteredItems.map(ds => {
-                        const isAdded = layers.some(l => l.datasetId === ds.id);
-                        return (
-                          <button
-                            key={ds.id}
-                            onClick={() => addLayer(ds.id)}
-                            className="w-full text-left p-3 hover:bg-white rounded-xl transition-all border border-transparent hover:border-slate-200 hover:shadow-xs group flex items-start justify-between bg-slate-50"
-                          >
-                            <div className="pr-4">
-                              <h5 className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors leading-snug">{ds.title}</h5>
-                              <p className="text-[11px] text-slate-400 mt-1 uppercase tracking-wider">{ds.source}</p>
-                            </div>
-                            {isAdded ? (
-                              <div className="text-emerald-500 shrink-0 mt-1 flex flex-col items-center bg-emerald-50 px-2 py-1 rounded">
-                                <span className="text-[10px] font-bold mb-0.5">ЕЩЕ</span>
-                                <Plus size={16} />
+                  <div key={group.id} className="mb-4 bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    <button 
+                      onClick={() => setCollapsedCatalogGroups(prev => ({...prev, [group.id]: !isGroupCollapsed}))}
+                      className="w-full px-4 py-3 flex items-center justify-between bg-slate-50 hover:bg-slate-100 transition-colors"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <GroupIcon size={18} className="text-blue-500" />
+                        <span className="text-sm font-bold text-slate-700 uppercase tracking-wider">{group.title}</span>
+                      </div>
+                      {isGroupCollapsed ? <ChevronRight size={18} className="text-slate-400" /> : <ChevronDown size={18} className="text-slate-400" />}
+                    </button>
+                    
+                    {!isGroupCollapsed && (
+                      <div className="p-2 space-y-1 bg-white">
+                        {filteredItems.map(ds => {
+                          const addedLayer = layers.find(l => l.datasetId === ds.id);
+                          const isAdded = !!addedLayer;
+                          return (
+                            <button
+                              key={ds.id}
+                              onClick={() => {
+                                if (isAdded) {
+                                  removeLayer(addedLayer.id);
+                                } else {
+                                  addLayer(ds.id);
+                                }
+                              }}
+                              className={`w-full text-left p-3 rounded-xl transition-all border group flex items-start justify-between ${
+                                isAdded 
+                                  ? 'bg-emerald-50/50 border-emerald-200/50 hover:border-emerald-300 hover:bg-emerald-50' 
+                                  : 'bg-white border-transparent hover:border-slate-200 hover:shadow-xs hover:bg-slate-50'
+                              }`}
+                            >
+                              <div className="pr-4">
+                                <h5 className={`font-bold transition-colors leading-snug ${isAdded ? 'text-emerald-800' : 'text-slate-800 group-hover:text-blue-600'}`}>{ds.title}</h5>
+                                <p className={`text-[11px] mt-1 uppercase tracking-wider ${isAdded ? 'text-emerald-600/70' : 'text-slate-400'}`}>{ds.source}</p>
                               </div>
-                            ) : (
-                              <Plus className="text-slate-300 group-hover:text-blue-500 shrink-0 mt-1" size={20} />
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
+                              {isAdded ? (
+                                <div className="text-emerald-600 shrink-0 mt-1 flex flex-col items-center bg-emerald-100 px-2 py-1 rounded transition-colors group-hover:bg-red-100 group-hover:text-red-600" title="Удалить из выбранного">
+                                  <X size={20} />
+                                </div>
+                              ) : (
+                                <Plus className="text-slate-300 group-hover:text-blue-500 shrink-0 mt-1" size={20} />
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 );
               })}
