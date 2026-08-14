@@ -854,7 +854,7 @@ function DatasetViewer({ dataset }) {
                         transform: isHovered ? 'scale(1.3)' : 'scale(1)'
                       }} 
                     />
-                    <span className="truncate max-w-[220px]">{lineKey}</span>
+                    <span className="truncate max-w-[220px]">{key}</span>
                     {isHidden ? <EyeOff size={12} className="text-slate-400 ml-1" /> : <Eye size={12} className="text-slate-300 hover:text-slate-500 ml-1 opacity-0 hover:opacity-100 transition-opacity" />}
                   </button>
                 );
