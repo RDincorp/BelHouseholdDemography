@@ -115,102 +115,104 @@ function App() {
         <>
           {/* Sidebar */}
           <aside className={classNames(
-            "bg-white border-r border-slate-200 flex flex-col transition-[width] duration-200 ease-in-out z-20 shadow-sm shrink-0 overflow-hidden",
+            "bg-slate-50 border-r border-slate-300 flex flex-col transition-[width] duration-200 ease-in-out z-20 shadow-sm shrink-0 overflow-hidden",
             isSidebarOpen ? "w-80" : "w-0 border-r-0"
           )}>
             {/* Sidebar Header */}
-            <div className="p-4 border-b border-slate-200 bg-blue-600 text-white flex items-center justify-between shrink-0">
+            <div className="p-3.5 border-b border-slate-800 bg-slate-900 text-white flex items-center justify-between shrink-0">
               <div className="flex items-center space-x-2">
-                <Users className="text-blue-200" size={22} />
-                <h1 className="text-base font-bold tracking-tight truncate">Демография Беларуси</h1>
+                <Users className="text-blue-400" size={20} />
+                <h1 className="text-sm font-extrabold tracking-tight truncate text-white">Демография Беларуси</h1>
               </div>
-              <span className="text-[10px] bg-blue-700 text-blue-100 px-2 py-0.5 rounded-full font-semibold">
+              <span className="text-[10px] bg-slate-800 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-md font-bold">
                 {db.datasets.length} наборов
               </span>
             </div>
 
-        {/* Sidebar Search Bar */}
-        <div className="p-3 border-b border-slate-200 bg-slate-50 shrink-0">
-          <div className="relative">
-            <Search className="absolute left-3 top-2.5 text-slate-400" size={16} />
-            <input 
-              type="text"
-              placeholder="Поиск показателей..."
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-1.5 text-xs bg-white border border-slate-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all placeholder:text-slate-400"
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600 text-xs font-bold"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-        </div>
-
-        {/* Tree Navigation Menu */}
-        <div className="flex-1 overflow-y-auto py-3 px-2">
-          {treeGroupedDatasets.map(group => {
-            const GroupIcon = group.icon;
-            const isExpanded = expandedTreeGroups[group.id] || searchQuery.trim().length > 0;
-
-            return (
-              <div key={group.id} className="mb-2">
-                {/* Tree Category Header */}
-                <button
-                  onClick={() => toggleGroup(group.id)}
-                  className="w-full flex items-center justify-between px-2 py-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-md transition-colors text-left group"
-                >
-                  <div className="flex items-center space-x-2 truncate pr-2">
-                    <GroupIcon size={16} className="text-blue-600 shrink-0" />
-                    <span className="truncate uppercase tracking-wider">{group.title}</span>
-                  </div>
-                  <div className="flex items-center space-x-1 shrink-0">
-                    <span className="text-[10px] bg-slate-200 text-slate-600 px-1.5 py-0.2 rounded-full font-medium">
-                      {group.items.length}
-                    </span>
-                    {isExpanded ? <ChevronDown size={14} className="text-slate-400" /> : <ChevronRight size={14} className="text-slate-400" />}
-                  </div>
-                </button>
-
-                {/* Tree Items List */}
-                {isExpanded && (
-                  <ul className="mt-1 ml-2 pl-2 border-l border-slate-200 space-y-0.5">
-                    {group.items.map(item => {
-                      const isActive = activeDatasetId === item.id;
-                      return (
-                        <li key={item.id}>
-                          <button
-                            onClick={() => setActiveDatasetId(item.id)}
-                            className={classNames(
-                              "w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all leading-snug font-normal",
-                              isActive
-                                ? "bg-blue-50 text-blue-700 font-semibold border-l-2 border-blue-600 pl-2 shadow-2xs"
-                                : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                            )}
-                            title={item.title}
-                          >
-                            {item.title}
-                          </button>
-                        </li>
-                      );
-                    })}
-                  </ul>
+            {/* Sidebar Search Bar */}
+            <div className="p-2.5 border-b border-slate-300 bg-white shrink-0">
+              <div className="relative">
+                <Search className="absolute left-3 top-2.5 text-slate-500" size={15} />
+                <input 
+                  type="text"
+                  placeholder="Поиск показателей..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-300 text-slate-900 font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600 focus:bg-white transition-all placeholder:text-slate-400"
+                />
+                {searchQuery && (
+                  <button 
+                    onClick={() => setSearchQuery('')}
+                    className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-700 text-xs font-bold"
+                  >
+                    ✕
+                  </button>
                 )}
               </div>
-            );
-          })}
-
-          {treeGroupedDatasets.length === 0 && (
-            <div className="p-4 text-center text-xs text-slate-400">
-              Показатели по запросу «{searchQuery}» не найдены
             </div>
-          )}
-        </div>
-      </aside>
+
+            {/* Tree Navigation Menu */}
+            <div className="flex-1 overflow-y-auto py-2.5 px-2 space-y-1.5">
+              {treeGroupedDatasets.map(group => {
+                const GroupIcon = group.icon;
+                const isExpanded = expandedTreeGroups[group.id] || searchQuery.trim().length > 0;
+
+                return (
+                  <div key={group.id} className="rounded-lg overflow-hidden border border-slate-200 bg-white">
+                    {/* Tree Category Header */}
+                    <button
+                      onClick={() => toggleGroup(group.id)}
+                      className={classNames(
+                        "w-full flex items-center justify-between px-3 py-2 text-xs font-bold text-slate-900 transition-colors text-left select-none cursor-pointer",
+                        isExpanded ? "bg-slate-100/90 text-slate-950 border-b border-slate-200" : "bg-white hover:bg-slate-100 text-slate-800"
+                      )}
+                    >
+                      <div className="flex items-center space-x-2 truncate pr-2">
+                        <GroupIcon size={16} className="text-blue-700 shrink-0" />
+                        <span className="truncate uppercase tracking-wider text-[11px] font-extrabold">{group.title}</span>
+                      </div>
+                      <div className="flex items-center space-x-1.5 shrink-0">
+                        <span className="text-[10px] bg-slate-800 text-white px-1.5 py-0.2 rounded font-bold">
+                          {group.items.length}
+                        </span>
+                        {isExpanded ? <ChevronDown size={14} className="text-slate-700" /> : <ChevronRight size={14} className="text-slate-400" />}
+                      </div>
+                    </button>
+
+                    {/* Tree Items List */}
+                    {isExpanded && (
+                      <ul className="p-1.5 space-y-0.5 bg-slate-50/70">
+                        {group.items.map(item => {
+                          const isActive = activeDatasetId === item.id;
+                          return (
+                            <li key={item.id}>
+                              <button
+                                onClick={() => setActiveDatasetId(item.id)}
+                                className={classNames(
+                                  "w-full text-left px-2.5 py-1.5 text-xs rounded-md transition-all leading-snug cursor-pointer",
+                                  isActive
+                                    ? "bg-blue-600 text-white font-semibold shadow-xs"
+                                    : "text-slate-800 hover:bg-slate-200/80 hover:text-slate-950 font-medium"
+                                )}
+                              >
+                                {item.title}
+                              </button>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+
+              {treeGroupedDatasets.length === 0 && (
+                <div className="p-4 text-center text-xs text-slate-500 font-medium">
+                  Показатели не найдены
+                </div>
+              )}
+            </div>
+          </aside>
 
       {/* Main Workspace Area */}
       <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-slate-50">
@@ -587,31 +589,27 @@ function DatasetViewer({ dataset }) {
             <button
               onClick={() => setIsAdaptiveY(!isAdaptiveY)}
               className={classNames(
-                "px-2.5 py-1 rounded-md font-medium text-xs flex items-center space-x-1.5 transition-all border shadow-2xs",
+                "px-2.5 py-1 rounded-md font-medium text-xs flex items-center space-x-1.5 transition-all border shadow-2xs cursor-pointer",
                 isAdaptiveY 
                   ? "bg-blue-600 text-white border-blue-600 font-semibold" 
                   : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
               )}
-              title="Адаптирует масштаб оси Y под диапазон данных, чтобы различия между близкими линиями были четко видны"
             >
               <Sliders size={13} />
-              <span>Адаптивная шкала Y: <strong>{isAdaptiveY ? 'Вкл (по фокусу)' : 'От 0'}</strong></span>
+              <span>Шкала Y: <strong>{isAdaptiveY ? 'Адаптивная' : 'От 0'}</strong></span>
             </button>
-            <span className="text-[11px] text-slate-500 hidden md:inline">
-              (помогает разделить близкие значения)
-            </span>
           </div>
 
           {/* Fix 5: Period quick preset buttons */}
           {yearsList.length > 3 && (
             <div className="flex items-center space-x-1.5">
-              <span className="text-slate-500 font-medium mr-1 flex items-center">
-                <Calendar size={13} className="mr-1" /> Период:
+              <span className="text-slate-600 font-bold mr-1 flex items-center">
+                <Calendar size={13} className="mr-1 text-slate-500" /> Период:
               </span>
               <button
                 onClick={() => setQuickPeriodPreset('all')}
                 className={classNames(
-                  "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border",
+                  "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer",
                   yearRangeIndices[0] === 0 && yearRangeIndices[1] === yearsList.length - 1
                     ? "bg-blue-100 text-blue-700 border-blue-300 font-bold"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
@@ -623,20 +621,20 @@ function DatasetViewer({ dataset }) {
                 <button
                   onClick={() => setQuickPeriodPreset(5)}
                   className={classNames(
-                    "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border",
+                    "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer",
                     yearRangeIndices[1] - yearRangeIndices[0] + 1 === 5 && yearRangeIndices[1] === yearsList.length - 1
                       ? "bg-blue-100 text-blue-700 border-blue-300 font-bold"
                       : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                   )}
                 >
-                  Последние 5 лет
+                  5 лет
                 </button>
               )}
               {yearsList.length >= 10 && (
                 <button
                   onClick={() => setQuickPeriodPreset(10)}
                   className={classNames(
-                    "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border",
+                    "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer",
                     yearRangeIndices[1] - yearRangeIndices[0] + 1 === 10 && yearRangeIndices[1] === yearsList.length - 1
                       ? "bg-blue-100 text-blue-700 border-blue-300 font-bold"
                       : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
@@ -649,12 +647,9 @@ function DatasetViewer({ dataset }) {
           )}
 
           {/* Forecast UI Controls */}
-          <div className="flex items-center space-x-3 border-l border-slate-300 pl-3 ml-1 bg-slate-50 px-3 py-1 rounded-md">
-            <div className="flex flex-col">
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider leading-none mb-1">
-                Тренд (Регрессия)
-              </span>
-              <label className="flex items-center space-x-2 cursor-pointer">
+          <div className="flex items-center space-x-3 border-l border-slate-300 pl-3 ml-1 bg-white px-3 py-1 rounded-md border border-slate-200">
+            <div className="flex items-center space-x-2">
+              <label className="flex items-center space-x-1.5 cursor-pointer select-none">
                 <input 
                   type="checkbox" 
                   checked={forecastYears > 0}
@@ -663,18 +658,18 @@ function DatasetViewer({ dataset }) {
                   }}
                   className="rounded text-amber-500 focus:ring-amber-500 bg-white border-slate-300"
                 />
-                <span className="text-xs font-semibold text-slate-700">Прогноз</span>
+                <span className="text-xs font-bold text-slate-800">Прогноз</span>
               </label>
             </div>
             
             {forecastYears > 0 && (
-              <div className="flex items-center space-x-2 ml-2 border-l border-slate-200 pl-3">
+              <div className="flex items-center space-x-2 border-l border-slate-200 pl-2.5">
                 <input 
                   type="range" 
                   min="1" max="10" step="1"
                   value={forecastYears}
                   onChange={(e) => handleForecastChange(Number(e.target.value))}
-                  className="w-24 accent-amber-500"
+                  className="w-20 accent-amber-500"
                 />
                 <span className="text-xs font-bold text-amber-600 w-12">{forecastYears} {forecastYears === 1 ? 'год' : forecastYears < 5 ? 'года' : 'лет'}</span>
               </div>
@@ -682,7 +677,7 @@ function DatasetViewer({ dataset }) {
           </div>
         </div>
         
-        {/* Interactive Chart Area (Fix 1: Focus outline removed) */}
+        {/* Interactive Chart Area */}
         {visibleChartData.length > 0 && lines.length > 0 ? (
           <div className="space-y-4">
             <div 
@@ -748,7 +743,7 @@ function DatasetViewer({ dataset }) {
                       );
                     })}
 
-                    {/* Fix 5: Interactive period Brush slider directly under the chart */}
+                    {/* Interactive period Brush slider directly under the chart */}
                     {yearsList.length > 2 && (
                       <Brush 
                         dataKey="year" 
@@ -831,10 +826,10 @@ function DatasetViewer({ dataset }) {
               </ResponsiveContainer>
             </div>
 
-            {/* Fix 2: Interactive Legend without layout shifts */}
+            {/* Interactive Legend without layout shifts */}
             <div className="flex flex-wrap justify-center items-center gap-2 pt-2 px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 select-none">
-                Легенда (клик — скрыть):
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mr-1 select-none">
+                Легенда:
               </span>
               {lines.map((key) => {
                 const isHidden = hiddenSeries.has(key);
@@ -855,7 +850,6 @@ function DatasetViewer({ dataset }) {
                           ? "bg-white text-slate-900 shadow-xs border-blue-400 ring-1 ring-blue-300 font-semibold"
                           : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100/50"
                     )}
-                    title={isHidden ? "Показать категорию на графике" : "Исключить категорию из графика"}
                   >
                     <span 
                       className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-150" 
@@ -874,8 +868,7 @@ function DatasetViewer({ dataset }) {
         ) : (
           <div className="h-64 flex flex-col items-center justify-center bg-slate-50 rounded-xl text-slate-400 border border-dashed border-slate-300 p-6 text-center">
             <Filter size={32} className="text-slate-300 mb-2" />
-            <p className="font-medium text-sm text-slate-600">Нет данных для выбранной комбинации фильтров</p>
-            <p className="text-xs text-slate-400 mt-1">Попробуйте выбрать другой регион, категорию или сбросить скрытые линии</p>
+            <p className="font-semibold text-sm text-slate-700">Нет данных для выбранной комбинации параметров</p>
           </div>
         )}
       </div>
@@ -885,22 +878,17 @@ function DatasetViewer({ dataset }) {
         <div className="p-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
           <h3 className="font-bold text-slate-800 text-sm flex items-center space-x-2">
             <BarChart2 size={16} className="text-blue-600" />
-            <span>Данные в табличном виде ({visibleChartData.length} периодов)</span>
+            <span>Таблица данных ({visibleChartData.length} периодов)</span>
           </h3>
-          <div className="flex items-center space-x-3">
-            <span className="text-xs text-slate-500 hidden sm:inline">
-              Отображаются выбранные периоды и категории
-            </span>
-            <button
-              onClick={() => {
-                const activeLines = lines.filter(l => !hiddenSeries.has(l));
-                exportToCSV(visibleChartData, ['year', ...activeLines], dataset.title.replace(/\s+/g, '_'));
-              }}
-              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center shadow-2xs"
-            >
-              Экспорт CSV
-            </button>
-          </div>
+          <button
+            onClick={() => {
+              const activeLines = lines.filter(l => !hiddenSeries.has(l));
+              exportToCSV(visibleChartData, ['year', ...activeLines], dataset.title.replace(/\s+/g, '_'));
+            }}
+            className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-md text-xs font-bold transition-colors flex items-center shadow-2xs cursor-pointer"
+          >
+            Экспорт CSV
+          </button>
         </div>
         
         <div className="overflow-x-auto max-h-96">

@@ -120,7 +120,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
           {layers.length === 0 ? (
             <div className="text-center p-8 text-slate-500 text-sm border-2 border-dashed border-slate-700 rounded-xl bg-slate-800/50">
               <Layers size={32} className="mx-auto mb-3 text-slate-600" />
-              Добавьте первый слой для построения графика
+              Слои не добавлены
             </div>
           ) : (
             layers.map((layer, idx) => (
@@ -142,10 +142,9 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
       {/* Main Chart Area (Right) */}
       <div className="flex-1 p-4 sm:p-6 overflow-y-auto">
         <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col h-full min-h-[500px]">
-          <div className="flex justify-between items-start mb-8">
+          <div className="flex justify-between items-start mb-6">
             <div>
               <h2 className="text-xl font-bold text-slate-900 tracking-tight">Мульти-анализ показателей</h2>
-              <p className="text-slate-500 text-sm mt-1">Сравнение различных наборов данных на единой временной шкале</p>
             </div>
             {chartData.length > 0 && (
               <button 
@@ -153,7 +152,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                   const exportKeys = layers.map(l => `Layer_${l.id}`);
                   exportToCSV(chartData, ['year', ...exportKeys], 'pro_analysis');
                 }}
-                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center shadow-sm"
+                className="bg-amber-500 hover:bg-amber-600 text-white px-4 py-2 rounded-lg text-xs font-bold transition-colors flex items-center shadow-sm cursor-pointer"
               >
                 <Download size={16} className="mr-2" />
                 Экспорт CSV
@@ -221,8 +220,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
             ) : (
                <div className="h-full flex flex-col items-center justify-center bg-slate-50/50 rounded-2xl text-slate-400 border-2 border-dashed border-slate-200">
                   <BarChart2 size={64} className="text-slate-200 mb-4" />
-                  <p className="text-lg font-medium text-slate-500">Нет слоев для отображения графика</p>
-                  <p className="text-sm mt-2 text-slate-400 max-w-sm text-center">Добавьте нужные показатели на панели слева, чтобы начать перекрестный анализ данных</p>
+                  <p className="text-base font-semibold text-slate-600">Нет данных для отображения</p>
                </div>
             )}
           </div>
@@ -234,19 +232,18 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6">
           <div className="bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-4xl max-h-full overflow-hidden border border-slate-200">
             {/* Header */}
-            <div className="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
+            <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
               <div className="flex items-center space-x-3">
                 <div className="bg-blue-100 p-2 rounded-lg">
-                  <Layers className="text-blue-600" size={24} />
+                  <Layers className="text-blue-600" size={20} />
                 </div>
                 <div>
-                  <h3 className="text-xl font-bold text-slate-900">Каталог данных</h3>
-                  <p className="text-sm text-slate-500">Выберите показатель для добавления на график</p>
+                  <h3 className="text-lg font-bold text-slate-900">Каталог данных</h3>
                 </div>
               </div>
               <button 
                 onClick={() => setIsCatalogOpen(false)}
-                className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+                className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors cursor-pointer"
               >
                 <X size={20} />
               </button>
