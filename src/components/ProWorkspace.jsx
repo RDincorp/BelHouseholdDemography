@@ -230,7 +230,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
       {/* Catalog Modal */}
       {isCatalogOpen && (
         <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 sm:p-6">
-          <div className="bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-4xl max-h-full overflow-hidden border border-slate-200">
+          <div className="bg-white rounded-2xl shadow-2xl flex flex-col w-full max-w-5xl max-h-full overflow-hidden border border-slate-200">
             {/* Header */}
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
               <div className="flex items-center space-x-3">
@@ -245,7 +245,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                 onClick={() => setIsCatalogOpen(false)}
                 className="p-2 hover:bg-slate-200 rounded-full text-slate-500 transition-colors cursor-pointer"
               >
-                <X size={20} />
+                <X size={22} />
               </button>
             </div>
             
@@ -303,7 +303,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                                   addLayer(ds.id);
                                 }
                               }}
-                              className={`w-full text-left p-3 rounded-xl transition-all border group flex items-center justify-between cursor-pointer ${
+                              className={`w-full text-left p-3.5 rounded-xl transition-all border group flex items-center justify-between cursor-pointer ${
                                 isAdded 
                                   ? 'bg-emerald-50/50 border-emerald-300' 
                                   : 'bg-white border-transparent hover:border-slate-200 hover:shadow-xs hover:bg-slate-50'
@@ -315,7 +315,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                               </div>
                               <div className="shrink-0 flex items-center justify-center p-1">
                                 <Plus 
-                                  size={20} 
+                                  size={24} 
                                   className={`transition-all duration-200 ease-in-out shrink-0 ${
                                     isAdded 
                                       ? 'text-red-500 rotate-45 hover:text-red-600 hover:scale-110' 
