@@ -80,8 +80,10 @@ export function generateForecastData(chartData, lines, yearsAhead = 5) {
         let predictedValue = model.predict(futureYear);
         if (predictedValue < 0) predictedValue = 0; 
         
-        if (predictedValue > 100) {
+        if (predictedValue >= 1000) {
             predictedValue = Math.round(predictedValue);
+        } else if (predictedValue >= 10) {
+            predictedValue = Number(predictedValue.toFixed(1));
         } else {
             predictedValue = Number(predictedValue.toFixed(2));
         }

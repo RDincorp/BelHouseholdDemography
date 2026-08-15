@@ -163,7 +163,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
 
           <div className="flex-1 min-h-0 w-full" tabIndex={-1}>
             {chartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={50}>
                 <ComposedChart data={chartData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis dataKey="year" tick={{fill: '#64748b', fontSize: 12}} tickLine={false} axisLine={{stroke: '#cbd5e1'}} />
@@ -186,7 +186,8 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                     tickFormatter={val => new Intl.NumberFormat('ru-RU', { notation: "compact" }).format(val)}
                   />
                   <Tooltip 
-                    contentStyle={{borderRadius: '12px', border: '1px solid #334155', backgroundColor: 'rgba(15, 23, 42, 0.95)', color: 'white', fontSize: '12px', backdropFilter: 'blur(8px)'}}
+                    wrapperStyle={{ pointerEvents: 'none', outline: 'none' }}
+                    contentStyle={{borderRadius: '12px', border: '1px solid #334155', backgroundColor: 'rgba(15, 23, 42, 0.95)', color: 'white', fontSize: '12px', backdropFilter: 'blur(8px)', pointerEvents: 'none'}}
                     formatter={(value, name) => {
                       const layerId = parseInt(name.replace('Layer_', ''), 10);
                       const layer = layers.find(l => l.id === layerId);
@@ -208,6 +209,7 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                         dataKey={dataKey}
                         stroke={color}
                         strokeWidth={3}
+                        isAnimationActive={false}
                         dot={{ r: 4, strokeWidth: 1, stroke: '#fff', fill: color }}
                         activeDot={{ r: 6, strokeWidth: 2, stroke: '#fff' }}
                         connectNulls

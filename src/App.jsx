@@ -115,8 +115,8 @@ function App() {
         <>
           {/* Sidebar */}
           <aside className={classNames(
-            "bg-white border-r border-slate-200 flex flex-col transition-all duration-300 z-20 shadow-sm",
-            isSidebarOpen ? "w-80" : "w-0 overflow-hidden"
+            "bg-white border-r border-slate-200 flex flex-col transition-[width] duration-200 ease-in-out z-20 shadow-sm shrink-0 overflow-hidden",
+            isSidebarOpen ? "w-80" : "w-0 border-r-0"
           )}>
             {/* Sidebar Header */}
             <div className="p-4 border-b border-slate-200 bg-blue-600 text-white flex items-center justify-between shrink-0">
@@ -213,7 +213,7 @@ function App() {
       </aside>
 
       {/* Main Workspace Area */}
-      <main className="flex-1 flex flex-col overflow-hidden bg-slate-50">
+      <main className="flex-1 min-w-0 flex flex-col overflow-hidden bg-slate-50">
         {/* Top Header Navbar */}
         <header className="bg-white border-b border-slate-200 h-14 flex items-center justify-between px-4 shrink-0 shadow-2xs z-10">
           <div className="flex items-center space-x-3 truncate">
@@ -426,11 +426,21 @@ function DatasetViewer({ dataset }) {
     return fullChartData;
   }, [fullChartData, lines, hiddenSeries, forecastYears]);
 
-  // Filter chart data according to year range slider ONLY for the raw table
+  // Clamp year indices to guarantee valid boundaries at all times
+  const clampedYearIndices = useMemo(() => {
+    const total = forecastedChartData.length;
+    if (total === 0) return [0, 0];
+    const maxIdx = total - 1;
+    const start = Math.min(Math.max(0, yearRangeIndices[0]), maxIdx);
+    const end = Math.min(Math.max(start, yearRangeIndices[1]), maxIdx);
+    return [start, end];
+  }, [forecastedChartData.length, yearRangeIndices]);
+
+  // Filter chart data according to clamped year range slider for the table
   const visibleChartData = useMemo(() => {
-    const [startIdx, endIdx] = yearRangeIndices;
+    const [startIdx, endIdx] = clampedYearIndices;
     return forecastedChartData.slice(startIdx, endIdx + 1);
-  }, [forecastedChartData, yearRangeIndices]);
+  }, [forecastedChartData, clampedYearIndices]);
 
   // Fix 6: Calculate Min/Max values across visible dataset to determine optimal Y-axis bounds
   const yDomainLimits = useMemo(() => {
@@ -449,12 +459,12 @@ function DatasetViewer({ dataset }) {
     if (min === Infinity || max === -Infinity) return [0, 'auto'];
 
     if (isAdaptiveY) {
-      const padding = (max - min) * 0.08 || min * 0.05 || 1;
-      const calculatedMin = Math.max(0, Math.floor(min - padding));
+      const padding = (max - min) * 0.08 || Math.abs(min) * 0.05 || 1;
+      const calculatedMin = min >= 0 ? Math.max(0, Math.floor(min - padding)) : Math.floor(min - padding);
       const calculatedMax = Math.ceil(max + padding);
       return [calculatedMin, calculatedMax];
     } else {
-      return [0, 'auto'];
+      return [min >= 0 ? 0 : 'auto', 'auto'];
     }
   }, [visibleChartData, lines, hiddenSeries, isAdaptiveY]);
 
@@ -537,7 +547,6 @@ function DatasetViewer({ dataset }) {
                   className="w-full border border-slate-300 rounded-lg px-3 py-1.5 text-xs bg-white text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-slate-100 disabled:text-slate-400 cursor-pointer transition-all shadow-2xs hover:border-slate-400"
                   value={filters[dim.code]}
                   onChange={e => handleFilterSelect(dim.code, e.target.value, e)}
-                  onFocus={e => e.target.blur()} // Fix 4: Prevent focus outline retention
                   disabled={splitBy === dim.code}
                 >
                   {dim.items.map(item => (
@@ -559,7 +568,6 @@ function DatasetViewer({ dataset }) {
                 className="w-full border border-blue-300 rounded-lg px-3 py-1.5 text-xs bg-blue-50/80 text-blue-900 font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 cursor-pointer shadow-2xs hover:bg-blue-100/80 transition-all"
                 value={splitBy}
                 onChange={e => handleSplitSelect(e.target.value, e)}
-                onFocus={e => e.target.blur()} // Fix 4: Prevent focus outline retention
               >
                 <option value="none">Не разбивать (Одна линия)</option>
                 {otherDims.map(dim => (
@@ -681,7 +689,7 @@ function DatasetViewer({ dataset }) {
               tabIndex={-1} 
               className="h-[430px] w-full mt-2 outline-none focus:outline-none focus:ring-0 select-none"
             >
-              <ResponsiveContainer width="100%" height="100%">
+              <ResponsiveContainer width="100%" height="100%" minWidth={0} debounce={50}>
                 {chartType === 'line' ? (
                   <LineChart 
                     data={forecastedChartData} 
@@ -702,9 +710,9 @@ function DatasetViewer({ dataset }) {
                       domain={yDomainLimits}
                       tickFormatter={val => new Intl.NumberFormat('ru-RU', { notation: "compact", compactDisplay: "short" }).format(val)}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ pointerEvents: 'none', outline: 'none' }} />
 
-                    {lines.map((key, i) => {
+                    {lines.map((key) => {
                       const isHidden = hiddenSeries.has(key);
                       const isHovered = hoveredSeries === key;
                       const hasHover = hoveredSeries !== null;
@@ -713,7 +721,7 @@ function DatasetViewer({ dataset }) {
 
                       const strokeColor = getConstantColor(key);
                       const strokeWidth = isHovered ? 4.5 : 2.8;
-                      const opacity = hasHover ? (isHovered ? 1.0 : 0.18) : 1.0;
+                      const opacity = hasHover ? (isHovered ? 1.0 : 0.2) : 1.0;
 
                       return (
                         <Line 
@@ -723,15 +731,16 @@ function DatasetViewer({ dataset }) {
                           stroke={strokeColor} 
                           strokeWidth={strokeWidth}
                           strokeOpacity={opacity}
+                          isAnimationActive={false}
                           strokeDasharray={row => row?.isForecast ? "5 5" : "0"}
                           dot={(props) => {
                             const { cx, cy, payload } = props;
                             if (payload.isForecast) {
                               return <circle cx={cx} cy={cy} r={3} fill="#fff" stroke={strokeColor} strokeWidth={2} strokeDasharray="0" />;
                             }
-                            return <circle cx={cx} cy={cy} r={isHovered ? 6 : 3.5} fill={strokeColor} stroke="#fff" strokeWidth={1} />;
+                            return <circle cx={cx} cy={cy} r={isHovered ? 5.5 : 3.5} fill={strokeColor} stroke="#fff" strokeWidth={1} />;
                           }}
-                          activeDot={{ r: 7, strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 6.5, strokeWidth: 2, stroke: '#fff' }}
                           connectNulls={true}
                           onMouseEnter={() => setHoveredSeries(key)}
                           onMouseLeave={() => setHoveredSeries(null)}
@@ -746,8 +755,8 @@ function DatasetViewer({ dataset }) {
                         height={28} 
                         stroke="#3b82f6"
                         fill="#f8fafc"
-                        startIndex={yearRangeIndices[0]}
-                        endIndex={yearRangeIndices[1]}
+                        startIndex={clampedYearIndices[0]}
+                        endIndex={clampedYearIndices[1]}
                         onChange={(e) => {
                           if (e && typeof e.startIndex === 'number' && typeof e.endIndex === 'number') {
                             setYearRangeIndex([e.startIndex, e.endIndex]);
@@ -776,9 +785,9 @@ function DatasetViewer({ dataset }) {
                       domain={yDomainLimits}
                       tickFormatter={val => new Intl.NumberFormat('ru-RU', { notation: "compact", compactDisplay: "short" }).format(val)}
                     />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ pointerEvents: 'none', outline: 'none' }} />
 
-                    {lines.map((key, i) => {
+                    {lines.map((key) => {
                       const isHidden = hiddenSeries.has(key);
                       const isHovered = hoveredSeries === key;
                       const hasHover = hoveredSeries !== null;
@@ -794,6 +803,7 @@ function DatasetViewer({ dataset }) {
                           dataKey={key} 
                           fill={fillColor}
                           fillOpacity={opacity}
+                          isAnimationActive={false}
                           radius={[4, 4, 0, 0]}
                           onMouseEnter={() => setHoveredSeries(key)}
                           onMouseLeave={() => setHoveredSeries(null)}
@@ -807,8 +817,8 @@ function DatasetViewer({ dataset }) {
                         height={28} 
                         stroke="#3b82f6"
                         fill="#f8fafc"
-                        startIndex={yearRangeIndices[0]}
-                        endIndex={yearRangeIndices[1]}
+                        startIndex={clampedYearIndices[0]}
+                        endIndex={clampedYearIndices[1]}
                         onChange={(e) => {
                           if (e && typeof e.startIndex === 'number' && typeof e.endIndex === 'number') {
                             setYearRangeIndex([e.startIndex, e.endIndex]);
@@ -821,12 +831,12 @@ function DatasetViewer({ dataset }) {
               </ResponsiveContainer>
             </div>
 
-            {/* Fix 2: Interactive Legend with Click-to-Exclude / Toggle functionality */}
+            {/* Fix 2: Interactive Legend without layout shifts */}
             <div className="flex flex-wrap justify-center items-center gap-2 pt-2 px-3 py-2.5 bg-slate-50 rounded-xl border border-slate-200/80 text-xs">
-              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1">
+              <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-1 select-none">
                 Легенда (клик — скрыть):
               </span>
-              {lines.map((key, i) => {
+              {lines.map((key) => {
                 const isHidden = hiddenSeries.has(key);
                 const isHovered = hoveredSeries === key;
                 const color = getConstantColor(key);
@@ -838,24 +848,24 @@ function DatasetViewer({ dataset }) {
                     onMouseEnter={() => setHoveredSeries(key)}
                     onMouseLeave={() => setHoveredSeries(null)}
                     className={classNames(
-                      "flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-all select-none cursor-pointer",
+                      "flex items-center space-x-1.5 px-2.5 py-1 rounded-lg border text-xs font-medium transition-colors select-none cursor-pointer",
                       isHidden 
                         ? "bg-slate-100 text-slate-400 border-slate-200 line-through opacity-60" 
                         : isHovered
-                          ? "bg-white text-slate-900 shadow-sm border-blue-400 ring-2 ring-blue-100 font-semibold scale-105"
+                          ? "bg-white text-slate-900 shadow-xs border-blue-400 ring-1 ring-blue-300 font-semibold"
                           : "bg-white text-slate-700 border-slate-200 hover:border-slate-300 hover:bg-slate-100/50"
                     )}
                     title={isHidden ? "Показать категорию на графике" : "Исключить категорию из графика"}
                   >
                     <span 
-                      className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform" 
+                      className="w-2.5 h-2.5 rounded-full shrink-0 transition-transform duration-150" 
                       style={{ 
                         backgroundColor: isHidden ? '#cbd5e1' : color,
-                        transform: isHovered ? 'scale(1.3)' : 'scale(1)'
+                        transform: isHovered ? 'scale(1.25)' : 'scale(1)'
                       }} 
                     />
                     <span className="truncate max-w-[220px]">{key}</span>
-                    {isHidden ? <EyeOff size={12} className="text-slate-400 ml-1" /> : <Eye size={12} className="text-slate-300 hover:text-slate-500 ml-1 opacity-0 hover:opacity-100 transition-opacity" />}
+                    {isHidden ? <EyeOff size={12} className="text-slate-400 ml-1 shrink-0" /> : <Eye size={12} className="text-slate-300 hover:text-slate-500 ml-1 opacity-0 hover:opacity-100 transition-opacity shrink-0" />}
                   </button>
                 );
               })}
@@ -954,7 +964,7 @@ function CustomTooltip({ active, payload, label }) {
   const sortedPayload = [...payload].sort((a, b) => (b.value || 0) - (a.value || 0));
 
   return (
-    <div className="bg-slate-900/95 text-white p-3 rounded-xl shadow-xl border border-slate-700 text-xs backdrop-blur-md min-w-[200px]">
+    <div className="bg-slate-900/95 text-white p-3 rounded-xl shadow-xl border border-slate-700 text-xs backdrop-blur-md min-w-[200px] pointer-events-none select-none">
       <div className="font-bold border-b border-slate-700 pb-1.5 mb-2 text-blue-300 text-sm flex items-center justify-between">
         <span>Период: {label} г.</span>
         <span className="text-[10px] text-slate-400 font-normal">{payload.length} показателей</span>
