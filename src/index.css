@@ -57,8 +57,14 @@ aside ::-webkit-scrollbar-thumb:hover {
   user-select: none;
 }
 
+/* Hide duplicate year texts inside brush since the X-Axis directly above shows all ticks clearly */
+.recharts-brush-texts {
+  display: none !important;
+}
+
 /* Background track */
-.recharts-brush > rect:first-child {
+.recharts-brush > rect:first-child,
+.recharts-brush-background {
   fill: #f8fafc !important;
   stroke: #e2e8f0 !important;
   stroke-width: 1px !important;
@@ -93,17 +99,16 @@ aside ::-webkit-scrollbar-thumb:hover {
   fill: #ffffff !important;
   stroke: #3b82f6 !important;
   stroke-width: 1.5px !important;
-  rx: 4px !important;
-  ry: 4px !important;
+  rx: 3px !important;
+  ry: 3px !important;
   filter: drop-shadow(0 1px 2px rgba(15, 23, 42, 0.18));
   cursor: ew-resize !important;
-  transition: all 0.15s ease;
+  transition: fill 0.15s ease, stroke 0.15s ease;
 }
 
 .recharts-brush-traveller:hover rect {
   fill: #eff6ff !important;
   stroke: #1d4ed8 !important;
-  filter: drop-shadow(0 2px 4px rgba(37, 99, 235, 0.3));
 }
 
 .recharts-brush-traveller line {
@@ -114,13 +119,5 @@ aside ::-webkit-scrollbar-thumb:hover {
 
 .recharts-brush-traveller:hover line {
   stroke: #1d4ed8 !important;
-}
-
-/* Start/End Year Labels on the brush */
-.recharts-brush-texts text {
-  font-family: inherit !important;
-  font-size: 11px !important;
-  font-weight: 600 !important;
-  fill: #475569 !important;
 }
 

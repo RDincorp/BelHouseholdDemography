@@ -340,6 +340,9 @@ function DatasetViewer({ dataset }) {
   // Forecasting and Export states
   const [forecastYears, setForecastYears] = useState(0);
 
+  // Brush remount key to prevent coordinate desync on dataset / period change
+  const [brushKey, setBrushKey] = useState(0);
+
   // Reset filter and view states when switching dataset
   useEffect(() => {
     setFilters(defaultFilters);
@@ -348,6 +351,7 @@ function DatasetViewer({ dataset }) {
     setHoveredSeries(null);
     setForecastYears(0);
     setYearRangeIndex(getDefaultYearRange(periodDim));
+    setBrushKey(k => k + 1);
   }, [dataset.id]);
 
   // Handler to automatically expand the view period to show the forecast
@@ -371,6 +375,7 @@ function DatasetViewer({ dataset }) {
       if (startIdx === newStartIdx && endIdx === newEndIdx) return prev;
       return [newStartIdx, newEndIdx];
     });
+    setBrushKey(k => k + 1);
   };
 
   // Handler for select dropdown change that IMMEDIATELY removes lingering focus outline
@@ -541,6 +546,7 @@ function DatasetViewer({ dataset }) {
       const start = Math.max(0, total - preset);
       setYearRangeIndex([start, total - 1]);
     }
+    setBrushKey(k => k + 1);
   };
 
   return (
@@ -804,6 +810,7 @@ function DatasetViewer({ dataset }) {
                     {/* Interactive period Brush slider directly under the chart */}
                     {yearsList.length > 2 && (
                       <Brush 
+                        key={`brush-line-${dataset.id}-${brushKey}`}
                         dataKey="year" 
                         height={30} 
                         stroke="#94a3b8"
@@ -811,6 +818,7 @@ function DatasetViewer({ dataset }) {
                         travellerWidth={8}
                         startIndex={clampedYearIndices[0]}
                         endIndex={clampedYearIndices[1]}
+                        tickFormatter={() => ''}
                         onChange={(e) => {
                           if (e && typeof e.startIndex === 'number' && typeof e.endIndex === 'number') {
                             setYearRangeIndex([e.startIndex, e.endIndex]);
@@ -867,6 +875,7 @@ function DatasetViewer({ dataset }) {
 
                     {yearsList.length > 2 && (
                       <Brush 
+                        key={`brush-bar-${dataset.id}-${brushKey}`}
                         dataKey="year" 
                         height={30} 
                         stroke="#94a3b8"
@@ -874,6 +883,7 @@ function DatasetViewer({ dataset }) {
                         travellerWidth={8}
                         startIndex={clampedYearIndices[0]}
                         endIndex={clampedYearIndices[1]}
+                        tickFormatter={() => ''}
                         onChange={(e) => {
                           if (e && typeof e.startIndex === 'number' && typeof e.endIndex === 'number') {
                             setYearRangeIndex([e.startIndex, e.endIndex]);
