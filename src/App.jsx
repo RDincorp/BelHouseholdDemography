@@ -316,8 +316,20 @@ function DatasetViewer({ dataset }) {
   const [hiddenSeries, setHiddenSeries] = useState(new Set());
   const [hoveredSeries, setHoveredSeries] = useState(null);
   
-  // Year period range state [startYearIndex, endYearIndex]
-  const [yearRangeIndices, setYearRangeIndex] = useState([0, (periodDim?.items?.length || 1) - 1]);
+  const getDefaultYearRange = (pDim) => {
+    if (!pDim?.items?.length) return [0, 0];
+    const total = pDim.items.length;
+    // Find the earliest index where year is >= 1999 (first census of independent Belarus)
+    const idx1999 = pDim.items.findIndex(item => {
+      const y = parseInt(item.name?.lang_ru || item.id, 10);
+      return !isNaN(y) && y >= 1999;
+    });
+    const startIdx = idx1999 >= 0 ? idx1999 : 0;
+    return [startIdx, total - 1];
+  };
+
+  // Year period range state [startYearIndex, endYearIndex] - defaults to 1999+ if available
+  const [yearRangeIndices, setYearRangeIndex] = useState(() => getDefaultYearRange(periodDim));
   
   // Fix 6: Adaptive Y Scale toggle (defaults to true for clear separation of tight data)
   const [isAdaptiveY, setIsAdaptiveY] = useState(true);
@@ -335,9 +347,7 @@ function DatasetViewer({ dataset }) {
     setHiddenSeries(new Set());
     setHoveredSeries(null);
     setForecastYears(0);
-    if (periodDim?.items?.length) {
-      setYearRangeIndex([0, periodDim.items.length - 1]);
-    }
+    setYearRangeIndex(getDefaultYearRange(periodDim));
   }, [dataset.id]);
 
   // Handler to automatically expand the view period to show the forecast
@@ -504,14 +514,31 @@ function DatasetViewer({ dataset }) {
     });
   };
 
+  const hasPre1999Data = useMemo(() => {
+    if (!periodDim?.items?.length) return false;
+    const firstYear = parseInt(periodDim.items[0]?.name?.lang_ru || periodDim.items[0]?.id, 10);
+    return !isNaN(firstYear) && firstYear < 1999;
+  }, [periodDim]);
+
+  const idx1999 = useMemo(() => {
+    if (!periodDim?.items?.length) return 0;
+    const idx = periodDim.items.findIndex(item => {
+      const y = parseInt(item.name?.lang_ru || item.id, 10);
+      return !isNaN(y) && y >= 1999;
+    });
+    return idx >= 0 ? idx : 0;
+  }, [periodDim]);
+
   // Quick preset year range buttons (Fix 5)
-  const setQuickPeriodPreset = (yearsCount) => {
-    if (!yearsList.length) return;
+  const setQuickPeriodPreset = (preset) => {
+    if (!yearsList.length || !periodDim) return;
     const total = yearsList.length;
-    if (yearsCount === 'all') {
+    if (preset === 'all') {
       setYearRangeIndex([0, total - 1]);
-    } else {
-      const start = Math.max(0, total - yearsCount);
+    } else if (preset === '1999') {
+      setYearRangeIndex([idx1999, total - 1]);
+    } else if (typeof preset === 'number') {
+      const start = Math.max(0, total - preset);
       setYearRangeIndex([start, total - 1]);
     }
   };
@@ -624,11 +651,24 @@ function DatasetViewer({ dataset }) {
               <span className="text-slate-600 font-bold mr-1 flex items-center">
                 <Calendar size={13} className="mr-1 text-slate-500" /> Период:
               </span>
+              {hasPre1999Data && (
+                <button
+                  onClick={() => setQuickPeriodPreset('1999')}
+                  className={classNames(
+                    "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer",
+                    yearRangeIndices[0] === idx1999 && yearRangeIndices[1] === yearsList.length - 1
+                      ? "bg-blue-100 text-blue-700 border-blue-300 font-bold"
+                      : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                  )}
+                >
+                  С 1999 г.
+                </button>
+              )}
               <button
                 onClick={() => setQuickPeriodPreset('all')}
                 className={classNames(
                   "px-2 py-0.5 rounded text-[11px] font-medium transition-colors border cursor-pointer",
-                  yearRangeIndices[0] === 0 && yearRangeIndices[1] === yearsList.length - 1
+                  yearRangeIndices[0] === 0 && yearRangeIndices[1] === yearsList.length - 1 && (!hasPre1999Data || idx1999 === 0)
                     ? "bg-blue-100 text-blue-700 border-blue-300 font-bold"
                     : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
                 )}
