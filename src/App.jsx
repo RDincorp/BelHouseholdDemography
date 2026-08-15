@@ -616,7 +616,7 @@ function DatasetViewer({ dataset }) {
                 value={splitBy}
                 onChange={e => handleSplitSelect(e.target.value, e)}
               >
-                <option value="none">Не разбивать (Одна линия)</option>
+                <option value="none">Одна линия</option>
                 {otherDims.map(dim => (
                   <option key={dim.code} value={dim.code}>
                     {dim.name?.lang_ru || dim.code}
@@ -805,9 +805,10 @@ function DatasetViewer({ dataset }) {
                     {yearsList.length > 2 && (
                       <Brush 
                         dataKey="year" 
-                        height={28} 
-                        stroke="#3b82f6"
+                        height={30} 
+                        stroke="#94a3b8"
                         fill="#f8fafc"
+                        travellerWidth={8}
                         startIndex={clampedYearIndices[0]}
                         endIndex={clampedYearIndices[1]}
                         onChange={(e) => {
@@ -867,9 +868,10 @@ function DatasetViewer({ dataset }) {
                     {yearsList.length > 2 && (
                       <Brush 
                         dataKey="year" 
-                        height={28} 
-                        stroke="#3b82f6"
+                        height={30} 
+                        stroke="#94a3b8"
                         fill="#f8fafc"
+                        travellerWidth={8}
                         startIndex={clampedYearIndices[0]}
                         endIndex={clampedYearIndices[1]}
                         onChange={(e) => {
