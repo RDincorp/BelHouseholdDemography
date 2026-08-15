@@ -17,41 +17,58 @@ import ProWorkspace from './components/ProWorkspace';
 const TREE_CATEGORIES = [
   {
     id: 'pop_structure',
-    title: 'Численность и возрастная структура',
-    icon: Users,
-    matchKeywords: ['численность', 'молодеж', 'возраст', 'населен', 'сельское']
+    title: 'Численность и структура',
+    icon: Users
   },
   {
     id: 'birth_death',
     title: 'Рождаемость и смертность',
-    icon: BarChart2,
-    matchKeywords: ['родивш', 'умерш', 'смерт', 'детей', 'рождаем', 'перинатальн']
+    icon: BarChart2
   },
   {
     id: 'marriages_family',
     title: 'Браки, разводы и семьи',
-    icon: HomeIcon,
-    matchKeywords: ['брак', 'развод', 'семь', 'браке', 'первый брак']
+    icon: HomeIcon
   },
   {
     id: 'households_care',
     title: 'Домохозяйства и опека',
-    icon: Layers,
-    matchKeywords: ['домохозяйств', 'детские дома', 'воспитывающихся']
+    icon: Layers
   },
   {
     id: 'migration',
     title: 'Миграция населения',
-    icon: Map,
-    matchKeywords: ['миграц', 'прибывш', 'выбывш', 'беженц']
-  },
-  {
-    id: 'other_demo',
-    title: 'Прочие демографические данные',
-    icon: Filter,
-    matchKeywords: []
+    icon: Map
   }
 ];
+
+// Disjoint categorization so every dataset belongs to exactly ONE logical category
+export function getDatasetCategoryId(ds) {
+  const t = (ds.title || '').toLowerCase();
+  
+  // 1. Migration & Refugees (3 datasets)
+  if (t.includes('миграц') || t.includes('прибывш') || t.includes('выбывш') || t.includes('беженц')) {
+    return 'migration';
+  }
+  
+  // 2. Households & Child Care / Foster Homes (5 datasets)
+  if (t.includes('домохозяйств') || (t.includes('детск') && (t.includes('дом') || t.includes('воспитывающихся') || t.includes('помещенных') || t.includes('покинувших')))) {
+    return 'households_care';
+  }
+  
+  // 3. Marriages, Divorces, Family Structure (11 datasets)
+  if (t.includes('брак') || t.includes('развод') || t.includes('семей') || t.includes('семь') || t.includes('родителе')) {
+    return 'marriages_family';
+  }
+  
+  // 4. Births & Mortality (11 datasets)
+  if (t.includes('родивш') || t.includes('рождаем') || t.includes('умерш') || t.includes('смертност') || t.includes('перинатальн')) {
+    return 'birth_death';
+  }
+  
+  // 5. Population Size & Age-Sex Structure (13 datasets)
+  return 'pop_structure';
+}
 
 function App() {
   const [db, setDb] = useState(null);
@@ -72,6 +89,29 @@ function App() {
       .catch(err => console.error("Failed to load db.json", err));
   }, []);
 
+  // Group datasets into tree categories with strictly disjoint 1-to-1 partitioning
+  const treeGroupedDatasets = useMemo(() => {
+    if (!db?.datasets) return [];
+    
+    return TREE_CATEGORIES.map(cat => {
+      const items = db.datasets.filter(ds => {
+        if (getDatasetCategoryId(ds) !== cat.id) return false;
+        
+        if (searchQuery.trim()) {
+          const query = searchQuery.toLowerCase();
+          return ds.title.toLowerCase().includes(query) || (ds.category && ds.category.toLowerCase().includes(query));
+        }
+        return true;
+      });
+
+      return { ...cat, items };
+    }).filter(group => group.items.length > 0);
+  }, [db, searchQuery]);
+
+  const totalFilteredDatasets = useMemo(() => {
+    return treeGroupedDatasets.reduce((sum, g) => sum + g.items.length, 0);
+  }, [treeGroupedDatasets]);
+
   if (!db) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50 text-slate-500 font-medium">
@@ -82,28 +122,6 @@ function App() {
   }
 
   const activeDataset = db.datasets.find(d => d.id === activeDatasetId);
-
-  // Group datasets into tree categories
-  const treeGroupedDatasets = TREE_CATEGORIES.map(cat => {
-    const items = db.datasets.filter(ds => {
-      // Filter by search query if typed
-      if (searchQuery.trim()) {
-        const query = searchQuery.toLowerCase();
-        const matchesQuery = ds.title.toLowerCase().includes(query) || ds.category.toLowerCase().includes(query);
-        if (!matchesQuery) return false;
-      }
-
-      if (cat.id === 'other_demo') {
-        // Fallback for datasets not matching prior keywords
-        return !TREE_CATEGORIES.slice(0, -1).some(otherCat => 
-          otherCat.matchKeywords.some(k => ds.title.toLowerCase().includes(k) || ds.category.toLowerCase().includes(k))
-        );
-      }
-      return cat.matchKeywords.some(k => ds.title.toLowerCase().includes(k) || ds.category.toLowerCase().includes(k));
-    });
-
-    return { ...cat, items };
-  }).filter(group => group.items.length > 0);
 
   const toggleGroup = (groupId) => {
     setExpandedTreeGroups(prev => ({ ...prev, [groupId]: !prev[groupId] }));
@@ -125,7 +143,7 @@ function App() {
                 <h1 className="text-sm font-extrabold tracking-tight truncate text-white">Демография Беларуси</h1>
               </div>
               <span className="text-[10px] bg-slate-800 text-slate-200 border border-slate-700 px-2 py-0.5 rounded-md font-bold">
-                {db.datasets.length} наборов
+                {searchQuery.trim() ? `${totalFilteredDatasets} из ${db.datasets.length}` : `${db.datasets.length} наборов`}
               </span>
             </div>
 
