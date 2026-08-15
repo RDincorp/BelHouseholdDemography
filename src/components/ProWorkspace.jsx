@@ -303,23 +303,26 @@ export default function ProWorkspace({ db, treeGroupedDatasets }) {
                                   addLayer(ds.id);
                                 }
                               }}
-                              className={`w-full text-left p-3 rounded-xl transition-all border group flex items-start justify-between ${
+                              className={`w-full text-left p-3 rounded-xl transition-all border group flex items-center justify-between cursor-pointer ${
                                 isAdded 
-                                  ? 'bg-emerald-50/50 border-emerald-200/50 hover:border-emerald-300 hover:bg-emerald-50' 
+                                  ? 'bg-emerald-50/50 border-emerald-300' 
                                   : 'bg-white border-transparent hover:border-slate-200 hover:shadow-xs hover:bg-slate-50'
                               }`}
                             >
-                              <div className="pr-4">
-                                <h5 className={`font-bold transition-colors leading-snug ${isAdded ? 'text-emerald-800' : 'text-slate-800 group-hover:text-blue-600'}`}>{ds.title}</h5>
-                                <p className={`text-[11px] mt-1 uppercase tracking-wider ${isAdded ? 'text-emerald-600/70' : 'text-slate-400'}`}>{ds.source}</p>
+                              <div className="pr-4 flex-1">
+                                <h5 className={`font-bold transition-colors leading-snug ${isAdded ? 'text-emerald-900' : 'text-slate-800 group-hover:text-blue-600'}`}>{ds.title}</h5>
+                                <p className={`text-[11px] mt-1 uppercase tracking-wider ${isAdded ? 'text-emerald-700/70' : 'text-slate-400'}`}>{ds.source}</p>
                               </div>
-                              {isAdded ? (
-                                <div className="text-emerald-600 shrink-0 mt-1 flex flex-col items-center bg-emerald-100 px-2 py-1 rounded transition-colors group-hover:bg-red-100 group-hover:text-red-600" title="Удалить из выбранного">
-                                  <X size={20} />
-                                </div>
-                              ) : (
-                                <Plus className="text-slate-300 group-hover:text-blue-500 shrink-0 mt-1" size={20} />
-                              )}
+                              <div className="shrink-0 flex items-center justify-center p-1">
+                                <Plus 
+                                  size={20} 
+                                  className={`transition-all duration-200 ease-in-out shrink-0 ${
+                                    isAdded 
+                                      ? 'text-red-500 rotate-45 hover:text-red-600 hover:scale-110' 
+                                      : 'text-slate-400 rotate-0 group-hover:text-blue-600'
+                                  }`} 
+                                />
+                              </div>
                             </button>
                           );
                         })}
